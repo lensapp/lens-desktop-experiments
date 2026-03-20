@@ -1,0 +1,27 @@
+{
+  "name": "@lens-experiments/hello-world",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sample hello-world experiment demonstrating the experiment structure",
+  "experiment": {
+    "id": "hello-world",
+    "name": "Hello World",
+    "description": "A sample experiment that registers a simple runnable and message listener",
+    "terminationUtcDateTime": "2027-01-01T00:00:00Z"
+  },
+  "peerDependencies": {
+    "@lensapp/application": "^7.2.0",
+    "@lensapp/feature-core": "^7.2.0",
+    "@lensapp/injectable": "^21.0.1",
+    "@lensapp/messaging": "^4.0.0",
+    "@lensapp/utilities": "^6.0.0"
+  },
+  "devDependencies": {
+    "@lensapp/application": "^7.2.0",
+    "@lensapp/feature-core": "^7.2.0",
+    "@lensapp/injectable": "^21.0.1",
+    "@lensapp/messaging": "^4.0.0",
+    "@lensapp/utilities": "^6.0.0",
+    "typescript": "^5.6.0"
+  }
+}
