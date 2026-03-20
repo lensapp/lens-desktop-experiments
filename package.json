@@ -1,0 +1,26 @@
+{
+  "name": "lens-desktop-experiments",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Dynamic feature experiments for Lens Desktop",
+  "workspaces": [
+    "experiments/*"
+  ],
+  "scripts": {
+    "build": "tsx infrastructure/build/build.ts",
+    "build:experiment": "tsx infrastructure/build/build.ts --experiment",
+    "typecheck": "tsx infrastructure/build/typecheck.ts",
+    "test": "jest --passWithNoTests --forceExit",
+    "sign": "tsx infrastructure/sign/sign-bundle.ts",
+    "manifest": "tsx infrastructure/publish/generate-manifest.ts"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "fast-glob": "^3.3.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
