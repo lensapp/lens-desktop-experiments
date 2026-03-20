@@ -9,6 +9,12 @@
     "description": "A sample experiment that registers a simple runnable and message listener",
     "terminationUtcDateTime": "2027-01-01T00:00:00Z"
   },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
   "peerDependencies": {
     "@lensapp/application": "^7.2.0",
     "@lensapp/feature-core": "^7.2.0",

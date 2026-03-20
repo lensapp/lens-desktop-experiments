@@ -34,6 +34,7 @@ export async function buildExperiment({ experimentDir }: BuildExperimentOptions)
 
   const mainEntry = path.join(experimentDir, "main-entry.ts");
   const rendererEntry = path.join(experimentDir, "renderer-entry.ts");
+  const combinedEntry = path.join(experimentDir, "index.ts");
 
   await Promise.all([
     build({
@@ -46,5 +47,37 @@ export async function buildExperiment({ experimentDir }: BuildExperimentOptions)
       entryPoints: [rendererEntry],
       outfile: path.join(experimentDir, "dist", "renderer.js"),
     }),
+    build({
+      ...sharedOptions,
+      entryPoints: [combinedEntry],
+      outfile: path.join(experimentDir, "dist", "index.js"),
+    }),
   ]);
+}
+
+export async function watchExperiment({ experimentDir }: BuildExperimentOptions) {
+  const sharedOptions: BuildOptions = {
+    bundle: true,
+    format: "cjs",
+    platform: "node",
+    sourcemap: true,
+    minify: false,
+    keepNames: true,
+    logLevel: "info",
+    plugins: [globImportPlugin()],
+    external,
+  };
+
+  const combinedEntry = path.join(experimentDir, "index.ts");
+
+  const ctx = await require("esbuild").context({
+    ...sharedOptions,
+    entryPoints: [combinedEntry],
+    outfile: path.join(experimentDir, "dist", "index.js"),
+  });
+
+  await ctx.watch();
+  console.log(`Watching ${path.basename(experimentDir)} for changes...`);
+
+  return ctx;
 }

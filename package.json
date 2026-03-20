@@ -9,6 +9,8 @@
   "scripts": {
     "build": "tsx infrastructure/build/build.ts",
     "build:experiment": "tsx infrastructure/build/build.ts --experiment",
+    "dev": "tsx infrastructure/build/watch.ts",
+    "dev:experiment": "tsx infrastructure/build/watch.ts",
     "typecheck": "tsx infrastructure/build/typecheck.ts",
     "test": "jest --passWithNoTests --forceExit",
     "sign": "tsx infrastructure/sign/sign-bundle.ts",
