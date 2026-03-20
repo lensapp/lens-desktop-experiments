@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.sig
+coverage/
+.idea/
+.DS_Store
