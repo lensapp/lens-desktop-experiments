@@ -4,5 +4,12 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["main-entry.ts", "renderer-entry.ts", "src/**/*.ts", "src/**/*.tsx", "../../global.d.ts"]
+  "include": [
+    "index.ts",
+    "main-entry.ts",
+    "renderer-entry.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "../../global.d.ts"
+  ]
 }

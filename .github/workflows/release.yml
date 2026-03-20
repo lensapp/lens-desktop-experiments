@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Configure npm for GitHub Packages
+        run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Sign bundles
+        run: npm run sign
+        env:
+          EXPERIMENT_SIGNING_PRIVATE_KEY: ${{ secrets.EXPERIMENT_SIGNING_PRIVATE_KEY }}
+
+      - name: Generate manifest
+        run: npm run manifest
+
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release-artifacts
+          cp dist/manifest.json release-artifacts/
+
+          for experiment_dir in experiments/*/; do
+            [ -d "${experiment_dir}dist" ] || continue
+            pkg="${experiment_dir}package.json"
+            [ -f "$pkg" ] || continue
+
+            id=$(node -e "console.log(require('./${pkg}').experiment.id)")
+            version=$(node -e "console.log(require('./${pkg}').version)")
+
+            for role in main renderer; do
+              bundle="${experiment_dir}dist/${role}.js"
+              sig="${bundle}.sig"
+              [ -f "$bundle" ] || continue
+
+              cp "$bundle" "release-artifacts/${id}-${version}-${role}.js"
+              [ -f "$sig" ] && cp "$sig" "release-artifacts/${id}-${version}-${role}.js.sig"
+            done
+          done
+
+          ls -la release-artifacts/
+
+      - name: Determine tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          generate_release_notes: true
+          files: release-artifacts/*
