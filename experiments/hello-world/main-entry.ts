@@ -1,0 +1,1 @@
+export { helloWorldMainFeature } from "./src/main/feature";
