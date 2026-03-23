@@ -1,1 +1,0 @@
-export { helloWorldRendererFeature } from "./src/renderer/feature";

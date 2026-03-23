@@ -6,22 +6,31 @@
   "experiment": {
     "id": "hello-world",
     "name": "Hello World",
-    "description": "A sample experiment that registers a simple runnable and message listener",
+    "description": "A sample experiment that shows a status bar indicator when loaded",
     "terminationUtcDateTime": "2027-01-01T00:00:00Z"
   },
+  "exports": {
+    ".": {
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
   "peerDependencies": {
-    "@lensapp/application": "^7.2.0",
     "@lensapp/feature-core": "^7.2.0",
     "@lensapp/injectable": "^21.0.1",
     "@lensapp/messaging": "^4.0.0",
-    "@lensapp/utilities": "^6.0.0"
+    "@lensapp/status-bar": "^2.0.0",
+    "@lensapp/utilities": "^6.0.0",
+    "react": "^19.0.0"
   },
   "devDependencies": {
-    "@lensapp/application": "^7.2.0",
     "@lensapp/feature-core": "^7.2.0",
     "@lensapp/injectable": "^21.0.1",
     "@lensapp/messaging": "^4.0.0",
+    "@lensapp/status-bar": "^2.0.0",
     "@lensapp/utilities": "^6.0.0",
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
     "typescript": "^5.6.0"
   }
 }
