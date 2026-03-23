@@ -55,14 +55,12 @@ jobs:
             id=$(node -e "console.log(require('./${pkg}').experiment.id)")
             version=$(node -e "console.log(require('./${pkg}').version)")
 
-            for role in main renderer; do
-              bundle="${experiment_dir}dist/${role}.js"
-              sig="${bundle}.sig"
-              [ -f "$bundle" ] || continue
+            bundle="${experiment_dir}dist/index.js"
+            sig="${bundle}.sig"
+            [ -f "$bundle" ] || continue
 
-              cp "$bundle" "release-artifacts/${id}-${version}-${role}.js"
-              [ -f "$sig" ] && cp "$sig" "release-artifacts/${id}-${version}-${role}.js.sig"
-            done
+            cp "$bundle" "release-artifacts/${id}-${version}.js"
+            [ -f "$sig" ] && cp "$sig" "release-artifacts/${id}-${version}.js.sig"
           done
 
           ls -la release-artifacts/

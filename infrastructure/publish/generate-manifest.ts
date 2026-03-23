@@ -15,30 +15,12 @@ interface ExperimentManifestEntry {
   description: string;
   version: string;
   terminationUtcDateTime: string;
-  artifacts: {
-    main: ArtifactInfo;
-    renderer: ArtifactInfo;
-  };
+  artifact: ArtifactInfo;
 }
 
 function sha256(filePath: string): string {
   const content = fs.readFileSync(filePath);
   return crypto.createHash("sha256").update(content).digest("hex");
-}
-
-function artifactInfo(experimentDir: string, id: string, version: string, role: "main" | "renderer"): ArtifactInfo {
-  const bundleName = `${id}-${version}-${role}.js`;
-  const bundlePath = path.join(experimentDir, "dist", `${role}.js`);
-
-  if (!fs.existsSync(bundlePath)) {
-    throw new Error(`Bundle not found: ${bundlePath}`);
-  }
-
-  return {
-    file: bundleName,
-    sha256: sha256(bundlePath),
-    sig: `${bundleName}.sig`,
-  };
 }
 
 async function main() {
@@ -61,6 +43,12 @@ async function main() {
     }
 
     const { id, name, description, terminationUtcDateTime } = pkg.experiment;
+    const bundleName = `${id}-${pkg.version}.js`;
+    const bundlePath = path.join(experimentDir, "dist", "index.js");
+
+    if (!fs.existsSync(bundlePath)) {
+      throw new Error(`Bundle not found: ${bundlePath}`);
+    }
 
     experiments.push({
       id,
@@ -68,9 +56,10 @@ async function main() {
       description,
       version: pkg.version,
       terminationUtcDateTime,
-      artifacts: {
-        main: artifactInfo(experimentDir, id, pkg.version, "main"),
-        renderer: artifactInfo(experimentDir, id, pkg.version, "renderer"),
+      artifact: {
+        file: bundleName,
+        sha256: sha256(bundlePath),
+        sig: `${bundleName}.sig`,
       },
     });
 
