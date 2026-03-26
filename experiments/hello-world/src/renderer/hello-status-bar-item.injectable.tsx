@@ -4,7 +4,7 @@ import React from "react";
 
 const HelloStatusBarItem = () => (
   <div style={{ padding: "0 8px", color: "#4caf50", fontWeight: "bold" }}>
-    Hello Experiment Loaded instant
+    Lab Experiments Enabled
   </div>
 );
 
