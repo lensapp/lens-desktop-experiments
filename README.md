@@ -1,13 +1,12 @@
 # Lens Desktop Experiments
 
-Dynamic feature experiments for Lens Desktop. Each experiment is a CommonJS bundle loaded at runtime via a sandbox.
+Dynamic feature experiments for Lens Desktop. Each experiment is a renderer-only CommonJS bundle loaded at runtime via a sandbox.
 
 ## Repository Structure
 
 ```
 experiments/
   hello-world/        # Sample experiment
-  _template/          # Copyable boilerplate for new experiments
 infrastructure/
   build/              # Shared esbuild configuration and build scripts
   sign/               # Ed25519 bundle signing utilities
@@ -16,18 +15,17 @@ infrastructure/
 
 ## How It Works
 
-Experiments are CommonJS bundles that export `getFeature()` instances. At runtime, the main Lens Desktop application loads these bundles via a sandbox (`new Function("module", "require", code)`) and registers the features into the DI container.
+Experiments are renderer-only CommonJS bundles that export `getFeature()` instances. At runtime, Lens Desktop loads these bundles via a sandbox (`new Function("module", "require", code)`) and registers the features into the DI container.
 
-Each experiment has two entry points:
-- `main-entry.ts` - Main process feature (MCP tools, backend logic)
-- `renderer-entry.ts` - Renderer process feature (UI listeners, components)
+Each experiment has a single entry point:
+- `index.ts` - Re-exports the renderer feature, built to `dist/index.js`
 
 ## Adding a New Experiment
 
-1. Copy `experiments/_template/` to `experiments/your-experiment-name/`
-2. Update `package.json` with your experiment's metadata
-3. Implement your features in `src/main/` and `src/renderer/`
-4. Add entry point re-exports in `main-entry.ts` and `renderer-entry.ts`
+1. Create a new directory under `experiments/your-experiment-name/`
+2. Add a `package.json` with experiment metadata (see below)
+3. Add an `index.ts` that re-exports your feature
+4. Implement your feature in `src/renderer/feature.ts` with glob-imported injectables
 5. Run `npm run build` to verify the build
 
 ## Development
