@@ -9,6 +9,7 @@ interface ArtifactInfo {
   sourceSig: string;
   packageJson: string;
   packageJsonSha256: string;
+  packageJsonSig: string;
 }
 
 interface ExperimentManifestEntry {
@@ -70,6 +71,7 @@ async function main() {
         sourceSig: `${sourceName}.sig`,
         packageJson: packageJsonName,
         packageJsonSha256: sha256(runtimePackageJsonPath),
+        packageJsonSig: `${packageJsonName}.sig`,
       },
     });
 
