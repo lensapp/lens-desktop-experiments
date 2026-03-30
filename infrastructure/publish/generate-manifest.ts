@@ -4,9 +4,11 @@ import path from "node:path";
 import glob from "fast-glob";
 
 interface ArtifactInfo {
-  file: string;
-  sha256: string;
-  sig: string;
+  source: string;
+  sourceSha256: string;
+  sourceSig: string;
+  packageJson: string;
+  packageJsonSha256: string;
 }
 
 interface ExperimentManifestEntry {
@@ -43,11 +45,17 @@ async function main() {
     }
 
     const { id, name, description, terminationUtcDateTime } = pkg.experiment;
-    const bundleName = `${id}-${pkg.version}.js`;
+    const sourceName = `${id}-${pkg.version}.js`;
     const bundlePath = path.join(experimentDir, "dist", "index.js");
+    const packageJsonName = `${id}-${pkg.version}.package.json`;
+    const runtimePackageJsonPath = path.join(experimentDir, "dist", "package.json");
 
     if (!fs.existsSync(bundlePath)) {
       throw new Error(`Bundle not found: ${bundlePath}`);
+    }
+
+    if (!fs.existsSync(runtimePackageJsonPath)) {
+      throw new Error(`Runtime package.json not found: ${runtimePackageJsonPath} (run generate-package-json first)`);
     }
 
     experiments.push({
@@ -57,9 +65,11 @@ async function main() {
       version: pkg.version,
       terminationUtcDateTime,
       artifact: {
-        file: bundleName,
-        sha256: sha256(bundlePath),
-        sig: `${bundleName}.sig`,
+        source: sourceName,
+        sourceSha256: sha256(bundlePath),
+        sourceSig: `${sourceName}.sig`,
+        packageJson: packageJsonName,
+        packageJsonSha256: sha256(runtimePackageJsonPath),
       },
     });
 

@@ -12,6 +12,7 @@
     "typecheck": "tsx infrastructure/build/typecheck.ts",
     "test": "jest --passWithNoTests --forceExit",
     "sign": "tsx infrastructure/sign/sign-bundle.ts",
+    "generate-package-json": "tsx infrastructure/publish/generate-runtime-package-json.ts",
     "manifest": "tsx infrastructure/publish/generate-manifest.ts"
   },
   "devDependencies": {
