@@ -34,6 +34,9 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Generate runtime package.json
+        run: npm run generate-package-json
+
       - name: Sign bundles
         run: npm run sign
         env:
@@ -61,6 +64,9 @@ jobs:
 
             cp "$bundle" "release-artifacts/${id}-${version}.js"
             [ -f "$sig" ] && cp "$sig" "release-artifacts/${id}-${version}.js.sig"
+
+            runtime_pkg="${experiment_dir}dist/package.json"
+            [ -f "$runtime_pkg" ] && cp "$runtime_pkg" "release-artifacts/${id}-${version}.package.json"
           done
 
           ls -la release-artifacts/
