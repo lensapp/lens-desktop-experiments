@@ -1,0 +1,39 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`living-docs-dev-tool given components catalog dev tool and some component item renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__y--scroll padding--l border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; top: 50%; left: 50%; width: 800px; height: 500px; transform: translate(-50%, -50%); z-index: 999;"
+    >
+      <h2
+        class="text-align--center margin__bottom--xl font__size--xl"
+      >
+        Living Docs
+      </h2>
+      <div
+        class="flex flex__direction--vertical flex__gap--xs padding--m margin__bottom--xl border__radius--l border__width--s border__color--grey60 border__style--solid backgroundColor--grey80Alpha85"
+      >
+        <h3
+          class="margin__bottom--s font__size--l"
+          data-living-docs-item-title-test="some-living-docs-item-id"
+        >
+          Some Components Catalog Item
+        </h3>
+        <div
+          class="margin__bottom--m color--grey20"
+          data-living-docs-item-description-test="some-living-docs-item-id"
+        >
+          This is some components catalog item for testing.
+        </div>
+        <div
+          data-some-living-docs-item-test="some-living-docs-item-id"
+        >
+          Some Components Catalog Item
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;

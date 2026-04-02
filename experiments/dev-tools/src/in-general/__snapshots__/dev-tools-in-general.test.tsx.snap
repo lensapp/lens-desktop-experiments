@@ -1,0 +1,31 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`dev-tools-in-general when rendered renders 1`] = `
+<body>
+  <div />
+</body>
+`;
+
+exports[`dev-tools-in-general when rendered when a dev tool emerges renders 1`] = `
+<body>
+  <div />
+</body>
+`;
+
+exports[`dev-tools-in-general when rendered when a dev tool emerges when a dev tool is toggled to be visible renders 1`] = `
+<body>
+  <div>
+    <div
+      data-dev-tool-test="true"
+    >
+      Some dev tool
+    </div>
+  </div>
+</body>
+`;
+
+exports[`dev-tools-in-general when rendered when a dev tool emerges when a dev tool is toggled to be visible when the dev tool is toggled to be hidden renders 1`] = `
+<body>
+  <div />
+</body>
+`;

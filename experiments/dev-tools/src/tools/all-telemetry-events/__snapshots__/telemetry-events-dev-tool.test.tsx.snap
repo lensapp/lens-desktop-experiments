@@ -1,0 +1,221 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`telemetry-events-dev-tool when rendered renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+      />
+    </div>
+  </div>
+</body>
+`;
+
+exports[`telemetry-events-dev-tool when rendered when telemetry event is sent given telemetry event with maximal data, when event is clicked, renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+      >
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-2/some-action-2"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          2
+          ) 
+          some-name-2
+           / 
+          some-action-2
+        </button>
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-1/some-action-1"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          1
+          ) 
+          some-name-1
+           / 
+          some-action-1
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="popover__overlay absolute"
+    data-popover-overlay-test="true"
+  >
+    <div
+      class="popover__content"
+      style="position: absolute; left: 0px; top: 0px; transform: translate(-42px, -8px);"
+    >
+      <div
+        class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+        style="max-width: 650px;"
+      >
+        <div>
+          Name: 
+          some-name-1
+        </div>
+        <div>
+          Action: 
+          some-action-1
+        </div>
+        <div>
+          User Interaction: 
+          true
+        </div>
+        <div>
+          Parameters:
+          <pre>
+            {
+  "some": "parameter",
+  "someOther": "parameter"
+}
+          </pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`telemetry-events-dev-tool when rendered when telemetry event is sent given telemetry event with minimal data, when event is clicked, renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+      >
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-2/some-action-2"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          2
+          ) 
+          some-name-2
+           / 
+          some-action-2
+        </button>
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-1/some-action-1"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          1
+          ) 
+          some-name-1
+           / 
+          some-action-1
+        </button>
+      </div>
+    </div>
+  </div>
+  <div
+    class="popover__overlay absolute"
+    data-popover-overlay-test="true"
+  >
+    <div
+      class="popover__content"
+      style="position: absolute; left: 0px; top: 0px; transform: translate(-42px, -8px);"
+    >
+      <div
+        class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+        style="max-width: 650px;"
+      >
+        <div>
+          Name: 
+          some-name-2
+        </div>
+        <div>
+          Action: 
+          some-action-2
+        </div>
+        <div>
+          User Interaction: 
+          false
+        </div>
+        <div>
+          Parameters:
+          <pre />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`telemetry-events-dev-tool when rendered when telemetry event is sent renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+      >
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-2/some-action-2"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          2
+          ) 
+          some-name-2
+           / 
+          some-action-2
+        </button>
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-telemetry-event-test="some-name-1/some-action-1"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          (
+          1
+          ) 
+          some-name-1
+           / 
+          some-action-1
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+`;
