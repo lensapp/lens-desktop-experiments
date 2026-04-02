@@ -1,0 +1,211 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`user-info-dev-tool user info button given access token and license exist when rendered renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--s"
+      >
+        <button
+          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          data-cursor-test="pointer"
+          data-user-info-button-test="true"
+          role="button"
+          style="flex-shrink: 0;"
+          tabindex="0"
+        >
+          User Info
+        </button>
+        <div
+          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+        >
+          <div
+            style="display: flex; gap: 8px; align-items: center;"
+          >
+            <div>
+              <div
+                class="Select theme-toolbar css-b62m3t-container"
+                data-select-test="user-info-license-features"
+              >
+                <span
+                  class="css-1f43avz-a11yText-A11yText"
+                  id="react-select-user-info-license-features-live-region"
+                />
+                <span
+                  aria-atomic="false"
+                  aria-live="polite"
+                  aria-relevant="additions text"
+                  class="css-1f43avz-a11yText-A11yText"
+                  role="log"
+                />
+                <div
+                  class="Select__control css-13cymwt-control"
+                >
+                  <div
+                    class="valueContainer Select__value-container Select__value-container--is-multi css-1fdsijx-ValueContainer"
+                  >
+                    <div
+                      class="Select__placeholder css-1jqq78o-placeholder"
+                      id="react-select-user-info-license-features-placeholder"
+                    >
+                      License Features
+                    </div>
+                    <div
+                      class="Select__input-container css-qbdosj-Input"
+                      data-value=""
+                    >
+                      <input
+                        aria-activedescendant=""
+                        aria-autocomplete="list"
+                        aria-describedby="react-select-user-info-license-features-placeholder"
+                        aria-expanded="false"
+                        aria-haspopup="true"
+                        autocapitalize="none"
+                        autocomplete="off"
+                        autocorrect="off"
+                        class="Select__input"
+                        data-select-input-test="true"
+                        id="user-info-license-features"
+                        role="combobox"
+                        spellcheck="false"
+                        style="color: inherit; background: 0px; opacity: 1; width: 100%; grid-area: 1 / 2; min-width: 2px; border: 0px; margin: 0px; outline: 0; padding: 0px;"
+                        tabindex="0"
+                        type="text"
+                        value=""
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="Select__indicators css-1hb7zxy-IndicatorsContainer"
+                  >
+                    <span
+                      class="Select__indicator-separator css-1u9des2-indicatorSeparator"
+                    />
+                    <div
+                      aria-hidden="true"
+                      class="Select__indicator Select__dropdown-indicator css-1xc3v61-indicatorContainer"
+                      data-dropdown-indicator-test="true"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        class="css-tj5bde-Svg"
+                        focusable="false"
+                        height="20"
+                        viewBox="0 0 20 20"
+                        width="20"
+                      >
+                        <path
+                          d="M4.516 7.548c0.436-0.446 1.043-0.481 1.576 0l3.908 3.747 3.908-3.747c0.533-0.481 1.141-0.446 1.574 0 0.436 0.445 0.408 1.197 0 1.615-0.406 0.418-4.695 4.502-4.695 4.502-0.217 0.223-0.502 0.335-0.787 0.335s-0.57-0.112-0.789-0.335c0 0-4.287-4.084-4.695-4.502s-0.436-1.17 0-1.615z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <button
+              class="Button"
+              data-add-feature-button-test="true"
+              type="button"
+            >
+              Add Feature
+            </button>
+          </div>
+        </div>
+        <div
+          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+        >
+          <div
+            style="display: flex; gap: 4px; align-items: center;"
+          >
+            <span
+              style="font-size: 11px; opacity: 0.7; flex-shrink: 0;"
+            >
+              Disabled:
+            </span>
+            <button
+              class="Button"
+              data-add-disabled-feature-button-test="true"
+              style="flex-shrink: 0;"
+              type="button"
+            >
+              + Disable Feature
+            </button>
+          </div>
+        </div>
+        <div
+          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+        >
+          <label
+            class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+            style="flex-shrink: 0;"
+          >
+            <input
+              data-license-trial-toggle-test="true"
+              type="checkbox"
+            />
+            Trial
+          </label>
+        </div>
+        <div
+          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+        >
+          <label
+            class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+            style="flex-shrink: 0;"
+          >
+            Expires:
+            <input
+              data-license-expiration-editor-test="true"
+              type="datetime-local"
+              value="2023-03-18T13:25"
+            />
+          </label>
+        </div>
+        <div
+          style="margin-left: auto;"
+        >
+          <button
+            class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+            data-user-info-close-button-test="true"
+            style="flex-shrink: 0;"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;
+
+exports[`user-info-dev-tool user info button given access token does not exist when rendered renders 1`] = `
+<body>
+  <div>
+    <div
+      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
+    >
+      <div
+        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--s"
+      >
+        <div
+          style="margin-left: auto;"
+        >
+          <button
+            class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+            data-user-info-close-button-test="true"
+            style="flex-shrink: 0;"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+`;

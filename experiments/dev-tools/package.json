@@ -1,0 +1,83 @@
+{
+  "name": "@lensapp/dev-tools",
+  "version": "1.5.0",
+  "private": false,
+  "description": "Package for Lens development tools",
+  "homepage": "https://k8slens.dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lensapp/lens-desktop-monorepo.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Mirantis, Inc.",
+    "email": "info@k8slens.dev"
+  },
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "lens-package-build",
+    "build:types": "lens-types-build",
+    "clean": "rimraf dist/",
+    "linkable-push": "linkable-push",
+    "lint": "lens-verify-code-style",
+    "test:unit": "jest"
+  },
+  "dependencies": {
+    "@lensapp/button": "^3.4.0",
+    "@lensapp/command-palette-renderer": "^1.2.0",
+    "@lensapp/composable-responsibilities": "^5.2.0",
+    "@lensapp/living-docs": "^1.0.0",
+    "@lensapp/element-components": "^3.3.0",
+    "@lensapp/feature-core": "^7.4.0",
+    "@lensapp/fp": "^21.1.0",
+    "@lensapp/icon": "^3.0.0",
+    "@lensapp/injectable": "^21.1.0",
+    "@lensapp/input": "^4.0.0",
+    "@lensapp/injectable-extension-for-mobx": "^21.1.0",
+    "@lensapp/injectable-react": "^21.1.0",
+    "@lensapp/use-sync-inject": "^1.0.0",
+    "@lensapp/lens-id": "^2.5.0",
+    "@lensapp/lens-platform-extension-sdk": "^7.2.0",
+    "@lensapp/persisted-state": "^1.2.0",
+    "@lensapp/map": "^2.2.0",
+    "@lensapp/messaging": "^4.0.0",
+    "@lensapp/react-application": "^3.2.0",
+    "@lensapp/select": "^4.0.0",
+    "@lensapp/telemetry": "^1.2.0",
+    "@lensapp/test-utils-for-production": "^1.2.0",
+    "@lensapp/utilities": "^6.1.0",
+    "@lensapp/with-auto-dispose": "^1.2.0",
+    "lodash": "^4.17.21",
+    "mobx": "^6.12.4",
+    "mobx-react": "^9.2.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@lensapp/code-style": "^1.2.0",
+    "@lensapp/jest": "^7.2.0",
+    "@lensapp/messaging-fake-bridge": "^4.0.0",
+    "@lensapp/package-build": "^2.2.0",
+    "@lensapp/react-testing-library-discovery": "^5.1.0",
+    "@lensapp/rendering-test-utils": "^3.2.0",
+    "@lensapp/typescript": "^7.2.0",
+    "@testing-library/react": "^16.3.0",
+    "@types/react-is": "^19.0.0",
+    "react-is": "^19.1.1"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://npm.pkg.github.com/"
+  }
+}
