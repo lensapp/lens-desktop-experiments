@@ -18,6 +18,7 @@ const getLicenseWithFeatures = (features: string[]): License => ({
     email: "irrelevant@example.com",
   },
   features,
+  disabledFeatures: [],
   trial: false,
   issuedBy: { name: "irrelevant" },
   metadata: null,
