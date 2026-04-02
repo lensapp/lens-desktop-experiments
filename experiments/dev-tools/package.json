@@ -3,6 +3,12 @@
   "version": "1.5.0",
   "private": false,
   "description": "Package for Lens development tools",
+  "experiment": {
+    "id": "dev-tools",
+    "name": "Dev Tools",
+    "description": "Development tools for Lens Desktop including icon browser, telemetry viewer, living docs, feature toggler, and user info editor",
+    "terminationUtcDateTime": "2027-01-01T00:00:00Z"
+  },
   "homepage": "https://k8slens.dev",
   "repository": {
     "type": "git",
