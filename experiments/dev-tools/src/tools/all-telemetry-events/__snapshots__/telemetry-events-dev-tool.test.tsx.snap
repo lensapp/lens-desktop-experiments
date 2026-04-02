@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`telemetry-events-dev-tool when rendered renders 1`] = `
 <body>
@@ -64,7 +64,7 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
   >
     <div
       class="popover__content"
-      style="position: absolute; left: 0px; top: 0px; transform: translate(-42px, -8px);"
+      style="position: absolute; left: 0px; top: 0px; transform: translate(0px, -8px);"
     >
       <div
         class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
@@ -146,7 +146,7 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
   >
     <div
       class="popover__content"
-      style="position: absolute; left: 0px; top: 0px; transform: translate(-42px, -8px);"
+      style="position: absolute; left: 0px; top: 0px; transform: translate(0px, -8px);"
     >
       <div
         class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"

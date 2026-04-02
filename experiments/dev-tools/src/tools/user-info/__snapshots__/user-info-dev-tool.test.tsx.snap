@@ -1,4 +1,4 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`user-info-dev-tool user info button given access token and license exist when rendered renders 1`] = `
 <body>
@@ -46,7 +46,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
                   class="Select__control css-13cymwt-control"
                 >
                   <div
-                    class="valueContainer Select__value-container Select__value-container--is-multi css-1fdsijx-ValueContainer"
+                    class="valueContainer Select__value-container Select__value-container--is-multi css-hlgwow"
                   >
                     <div
                       class="Select__placeholder css-1jqq78o-placeholder"
@@ -55,7 +55,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
                       License Features
                     </div>
                     <div
-                      class="Select__input-container css-qbdosj-Input"
+                      class="Select__input-container css-19bb58m"
                       data-value=""
                     >
                       <input
@@ -72,7 +72,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
                         id="user-info-license-features"
                         role="combobox"
                         spellcheck="false"
-                        style="color: inherit; background: 0px; opacity: 1; width: 100%; grid-area: 1 / 2; min-width: 2px; border: 0px; margin: 0px; outline: 0; padding: 0px;"
+                        style="opacity: 1; width: 100%; grid-area: 1 / 2; min-width: 2px; border: 0px; margin: 0px; outline: 0; padding: 0px;"
                         tabindex="0"
                         type="text"
                         value=""
@@ -80,7 +80,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
                     </div>
                   </div>
                   <div
-                    class="Select__indicators css-1hb7zxy-IndicatorsContainer"
+                    class="Select__indicators css-1wy0on6"
                   >
                     <span
                       class="Select__indicator-separator css-1u9des2-indicatorSeparator"
