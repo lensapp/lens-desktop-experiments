@@ -10,42 +10,198 @@ import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
 import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
-import { Div, Span } from "@lensapp/element-components";
+import { ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
 import { observer } from "mobx-react";
-import React from "react";
+import React, { useCallback, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
+import { parseLocationBarInput } from "./parse-location-bar-input";
+import {
+  type NavigationFailure,
+  navigateFromLocationInputInjectionToken,
+} from "./navigate-from-location-input.injectable";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
 const defaultNonClusterLabel = "Lens";
 
+const failureMessage = (failure: NavigationFailure): string => {
+  switch (failure.kind) {
+    case "cluster-not-found":
+      return `Cluster "${failure.clusterName}" not found`;
+    case "resource-type-not-found":
+      return `Resource type "${failure.resourcePluralName}" not found`;
+  }
+};
+
 type LocationBarViewProps = {
+  readonly segments: readonly string[];
+  readonly onEditRequested?: () => void;
+};
+
+const LocationBarView = ({ segments, onEditRequested }: LocationBarViewProps) => {
+  const content = (
+    <>
+      {segments.map((segment, index) => (
+        <React.Fragment key={index}>
+          {index > 0 && (
+            <Span aria-hidden $style={{ opacity: 0.5 }}>
+              {segmentSeparator}
+            </Span>
+          )}
+          <Span $font={{ noWrap: true, textOverflow: "ellipsis" }} $overflow="hidden">
+            {segment}
+          </Span>
+        </React.Fragment>
+      ))}
+    </>
+  );
+
+  if (!onEditRequested) {
+    return (
+      <Div
+        data-location-bar-test
+        $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+        $padding={{ horizontal: "s" }}
+        $overflow="hidden"
+        $style={{ fontFamily: "monospace", minWidth: 0 }}
+      >
+        {content}
+      </Div>
+    );
+  }
+
+  return (
+    <ClickableDiv
+      data-location-bar-test
+      onClick={onEditRequested}
+      aria-label="Edit location"
+      $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+      $padding={{ horizontal: "s" }}
+      $overflow="hidden"
+      $style={{ fontFamily: "monospace", minWidth: 0, cursor: "text" }}
+    >
+      {content}
+    </ClickableDiv>
+  );
+};
+
+type LocationBarInputProps = {
+  readonly initialValue: string;
+  readonly errorMessage: string | undefined;
+  readonly onSubmit: (value: string) => void;
+  readonly onCancel: () => void;
+};
+
+const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: LocationBarInputProps) => {
+  const [value, setValue] = useState(initialValue);
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onCancel();
+      }
+    },
+    [onCancel],
+  );
+
+  const handleSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      onSubmit(value);
+    },
+    [onSubmit, value],
+  );
+
+  return (
+    <Form
+      onSubmit={handleSubmit}
+      $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+      $padding={{ horizontal: "s" }}
+      $overflow="hidden"
+      $style={{ fontFamily: "monospace", minWidth: 0, flex: 1 }}
+    >
+      <Input
+        autoFocus
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={onCancel}
+        aria-label="Location input"
+        aria-invalid={errorMessage !== undefined}
+        $style={{
+          fontFamily: "monospace",
+          width: "100%",
+          border: "none",
+          outline: "none",
+          background: "transparent",
+          color: "inherit",
+        }}
+      />
+      {errorMessage && (
+        <Span role="alert" $style={{ color: "var(--colorError, #e53935)", whiteSpace: "nowrap" }}>
+          {errorMessage}
+        </Span>
+      )}
+    </Form>
+  );
+};
+
+type EditableLocationBarProps = {
   readonly segments: readonly string[];
 };
 
-const LocationBarView = ({ segments }: LocationBarViewProps) => (
-  <Div
-    data-location-bar-test
-    $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
-    $padding={{ horizontal: "s" }}
-    $overflow="hidden"
-    $style={{ fontFamily: "monospace", minWidth: 0 }}
-  >
-    {segments.map((segment, index) => (
-      <React.Fragment key={index}>
-        {index > 0 && (
-          <Span aria-hidden $style={{ opacity: 0.5 }}>
-            {segmentSeparator}
-          </Span>
-        )}
-        <Span $font={{ noWrap: true, textOverflow: "ellipsis" }} $overflow="hidden">
-          {segment}
-        </Span>
-      </React.Fragment>
-    ))}
-  </Div>
-);
+const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
+  const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
+  const [isEditing, setIsEditing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+
+  const enterEditMode = useCallback(() => {
+    setErrorMessage(undefined);
+    setIsEditing(true);
+  }, []);
+
+  const cancelEdit = useCallback(() => {
+    setIsEditing(false);
+    setErrorMessage(undefined);
+  }, []);
+
+  const submitEdit = useCallback(
+    async (value: string) => {
+      const parsed = parseLocationBarInput(value);
+
+      if (!parsed) {
+        setErrorMessage("Enter a path like cluster/namespace/pods");
+        return;
+      }
+
+      const failure = await navigate(parsed);
+
+      if (failure) {
+        setErrorMessage(failureMessage(failure));
+        return;
+      }
+
+      setIsEditing(false);
+      setErrorMessage(undefined);
+    },
+    [navigate],
+  );
+
+  if (isEditing) {
+    return (
+      <LocationBarInput
+        initialValue={segments.join(segmentSeparator)}
+        errorMessage={errorMessage}
+        onSubmit={submitEdit}
+        onCancel={cancelEdit}
+      />
+    );
+  }
+
+  return <LocationBarView segments={segments} onEditRequested={enterEditMode} />;
+};
 
 type ClusterBreadcrumbProps = {
   readonly tabId: string;
@@ -69,7 +225,7 @@ const ClusterBreadcrumb = observer(
       resourceName: kubeObject?.metadata.name,
     });
 
-    return <LocationBarView segments={segments} />;
+    return <EditableLocationBar segments={segments} />;
   },
 );
 
@@ -81,7 +237,7 @@ const LocationBar = observer(() => {
   if (!activeClusterEntity || !selectedClusterTab) {
     const label = selectedTab ? labelForTabType(selectedTab.type) : defaultNonClusterLabel;
 
-    return <LocationBarView segments={[label]} />;
+    return <EditableLocationBar segments={[label]} />;
   }
 
   return (

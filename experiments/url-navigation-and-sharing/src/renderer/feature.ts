@@ -7,6 +7,8 @@ import { mainViewFeature } from "@lensapp/main-view";
 import { selectingNamespacesFeature } from "@lensapp/selecting-namespaces";
 import { kubeObjectDetailsPanelFeature } from "@lensapp/kube-object-details-panel";
 import { clusterCommonFeature } from "@lensapp/cluster-common";
+import { clusterSourceFeature } from "@lensapp/cluster-source";
+import { kubeResourceFeature } from "@lensapp/kube-resource";
 import { elementComponentFeature } from "@lensapp/element-components";
 
 export const urlNavigationAndSharingRendererFeature = getFeature({
@@ -20,6 +22,8 @@ export const urlNavigationAndSharingRendererFeature = getFeature({
     selectingNamespacesFeature,
     kubeObjectDetailsPanelFeature,
     clusterCommonFeature,
+    clusterSourceFeature,
+    kubeResourceFeature,
     elementComponentFeature,
   ],
 });
