@@ -119,8 +119,7 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
       onSubmit={handleSubmit}
       $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
       $padding={{ horizontal: "s" }}
-      $overflow="hidden"
-      $style={{ fontFamily: "monospace", minWidth: 0, flex: 1 }}
+      $style={{ fontFamily: "monospace", width: "min(40rem, 60vw)" }}
     >
       <Input
         autoFocus
@@ -132,7 +131,8 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
         aria-invalid={errorMessage !== undefined}
         $style={{
           fontFamily: "monospace",
-          width: "100%",
+          flex: 1,
+          minWidth: 0,
           border: "none",
           outline: "none",
           background: "transparent",

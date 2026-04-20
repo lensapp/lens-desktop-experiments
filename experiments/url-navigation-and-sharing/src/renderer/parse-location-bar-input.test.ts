@@ -1,4 +1,4 @@
-import { parseLocationBarInput } from "./parse-location-bar-input";
+import { parseLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
 
 describe("parseLocationBarInput", () => {
   describe("given a full four-segment path", () => {
@@ -89,6 +89,78 @@ describe("parseLocationBarInput", () => {
 
     it("returns undefined for only slashes", () => {
       expect(parseLocationBarInput("///")).toBeUndefined();
+    });
+  });
+});
+
+describe("resolveLocationSegments", () => {
+  const knownPlurals = new Set(["pods", "deployments", "nodes", "persistentvolumes", "clusterroles"]);
+  const canResolvePlural = (name: string) => knownPlurals.has(name);
+
+  describe("given a cluster-scoped resource typed without a namespace segment", () => {
+    it("shifts the plural up and drops the namespace", () => {
+      const parsed = parseLocationBarInput("lc-staging1/nodes");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual({
+        clusterName: "lc-staging1",
+        namespace: undefined,
+        resourcePluralName: "nodes",
+        resourceName: undefined,
+      });
+    });
+
+    it("shifts the resource name along with the plural", () => {
+      const parsed = parseLocationBarInput("lc-staging1/nodes/ip-10-0-0-1");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual({
+        clusterName: "lc-staging1",
+        namespace: undefined,
+        resourcePluralName: "nodes",
+        resourceName: "ip-10-0-0-1",
+      });
+    });
+
+    it("shifts for any known plural, not only cluster-scoped ones", () => {
+      const parsed = parseLocationBarInput("lc-staging1/pods");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual({
+        clusterName: "lc-staging1",
+        namespace: undefined,
+        resourcePluralName: "pods",
+        resourceName: undefined,
+      });
+    });
+  });
+
+  describe("given an already-valid three-segment path", () => {
+    it("does not shift when the plural slot resolves", () => {
+      const parsed = parseLocationBarInput("lc-staging1/default/pods");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual(parsed);
+    });
+  });
+
+  describe("given a four-segment path", () => {
+    it("does not shift when the plural slot resolves", () => {
+      const parsed = parseLocationBarInput("lc-staging1/default/pods/nginx-abc");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual(parsed);
+    });
+  });
+
+  describe("given an unknown resource plural in both slots", () => {
+    it("leaves the input untouched so the navigator can surface the error", () => {
+      const parsed = parseLocationBarInput("lc-staging1/bogus/also-bogus");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual(parsed);
+    });
+  });
+
+  describe("given a plausible namespace name in the namespace slot", () => {
+    it("does not shift when the name is not a known plural", () => {
+      const parsed = parseLocationBarInput("lc-staging1/monitoring");
+
+      expect(resolveLocationSegments(parsed!, canResolvePlural)).toEqual(parsed);
     });
   });
 });

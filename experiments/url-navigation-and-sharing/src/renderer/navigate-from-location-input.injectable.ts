@@ -3,7 +3,7 @@ import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
 import { selectNamespacesInjectionToken, allNamespacesSelectedValue } from "@lensapp/selecting-namespaces";
-import type { ParsedLocationBarInput } from "./parse-location-bar-input";
+import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
 
 export type NavigationFailure =
   | { readonly kind: "cluster-not-found"; readonly clusterName: string }
@@ -28,29 +28,44 @@ const navigateFromLocationInputInjectable = getInjectable({
         return { kind: "cluster-not-found", clusterName: input.clusterName };
       }
 
-      if (!input.resourcePluralName) {
+      const kindByPlural = new Map<string, KubeResourceKind>();
+
+      const canResolvePlural = (pluralName: string): boolean => {
+        if (kindByPlural.has(pluralName)) {
+          return true;
+        }
+
+        try {
+          kindByPlural.set(pluralName, di.inject(kubeResourceKindByPluralNameInjectionToken.for(pluralName)));
+          return true;
+        } catch {
+          return false;
+        }
+      };
+
+      const resolved = resolveLocationSegments(input, canResolvePlural);
+
+      if (!resolved.resourcePluralName) {
         return undefined;
       }
 
-      let kind: KubeResourceKind;
-
-      try {
-        kind = di.inject(kubeResourceKindByPluralNameInjectionToken.for(input.resourcePluralName));
-      } catch {
-        return { kind: "resource-type-not-found", resourcePluralName: input.resourcePluralName };
+      if (!canResolvePlural(resolved.resourcePluralName)) {
+        return { kind: "resource-type-not-found", resourcePluralName: resolved.resourcePluralName };
       }
+
+      const kind = kindByPlural.get(resolved.resourcePluralName) as KubeResourceKind;
 
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), cluster.id);
       const tabId = await showTab();
 
-      if (input.namespace) {
+      if (resolved.namespace) {
         const selectNamespaces = await di.inject(selectNamespacesInjectionToken, {
           clusterId: cluster.id,
           tabId,
         });
 
         const normalized =
-          input.namespace === allNamespacesSelectedValue ? allNamespacesSelectedValue : input.namespace;
+          resolved.namespace === allNamespacesSelectedValue ? allNamespacesSelectedValue : resolved.namespace;
 
         selectNamespaces([normalized]);
       }
