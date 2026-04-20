@@ -4,18 +4,19 @@ This repo holds **lab experiments** — renderer-only CommonJS bundles that Lens
 
 ## Read First
 
-If you're starting work on an experiment, the entry-point playbook lives in the Lens Desktop monorepo:
+This file is the entry point for experiment work — read it top-to-bottom before touching anything under `experiments/`.
 
-```
-../lens-desktop-monorepo/.knowledge/technical/experiments/starting-a-new-experiment.md
-```
+Writing an experiment is nearly identical to writing any Lens feature: same DI, MobX, React, testing, and commit conventions. The monorepo's shared knowledge still applies when authoring the code — you need both this file and those categories in context:
 
-That playbook is the orchestrator — it tells you when to work here versus when to land a supporting PR in the monorepo. Read it before this file.
+- `../lens-desktop-monorepo/.knowledge/technical/architecture/` — SOLID, contracts packages, telemetry.
+- `../lens-desktop-monorepo/.knowledge/technical/di/` — injection tokens, injectables, feature registration.
+- `../lens-desktop-monorepo/.knowledge/technical/react/` — component patterns and UI conventions.
+- `../lens-desktop-monorepo/.knowledge/technical/mobx/` — observables and transactionality.
+- `../lens-desktop-monorepo/.knowledge/technical/testing/` — test structure, mocking, patterns.
+- `../lens-desktop-monorepo/.knowledge/technical/anti-patterns/` — what to avoid.
+- `../lens-desktop-monorepo/.knowledge/technical/workflow/conventional-commits.md` — commit message format.
 
-Additional monorepo-side knowledge you may need:
-
-- `../lens-desktop-monorepo/.knowledge/technical/experiments/working-with-experiments.md` — core rules (third-party, additions-over-changes, independent versioning) + cross-repo contract surface.
-- `../lens-desktop-monorepo/.knowledge/technical/experiments/monorepo-consumption.md` — how Lens resolves release tags, fetches, verifies, and installs experiments.
+What's **experiment-specific** — delivery format, publishing, cross-repo sequencing, contract surface — is captured below.
 
 ## What This Repo Owns
 
@@ -99,13 +100,36 @@ Required structure (see `experiments/hello-world/package.json` for a complete ex
 
 Standard monorepo DI conventions apply: `getInjectable`, injection tokens for public contracts, `_private/` for internals. Experiments are DI-registered exactly like in-monorepo features — the only difference is the delivery mechanism. See `../lens-desktop-monorepo/.knowledge/technical/di/` if you need a refresher.
 
-## Authoring Rules (Come From The Monorepo Side)
+## Authoring Rules (Experiment-Specific)
 
-These constraints are enforced here because they're what the monorepo depends on. Full rationale in `../lens-desktop-monorepo/.knowledge/technical/experiments/working-with-experiments.md`.
+These constraints exist because experiments ship out of this repo but run inside Lens Desktop, which consumes them as signed artifacts. They apply to experiment work only — not to general monorepo development.
 
 1. **`@lensapp/*` are third-party**: consume them at their published versions from GitHub Packages. No source imports, path aliases, or workspace links into `../lens-desktop-monorepo/`. Only public exports — nothing from `_private/`.
-2. **Prefer no monorepo changes**: design against the existing public API. If you hit a gap, **stop and coordinate a purely-additive PR on the monorepo side** (grouped into one dedicated PR for the experiment) before adding the import here.
+2. **Prefer no monorepo changes**: design against the existing public API. If you hit a gap, **stop and coordinate a purely-additive PR on the monorepo side** (grouped into one dedicated PR for the experiment) before adding the import here. This additive bias is scoped to experiment-support work — general monorepo refactoring follows its own rules.
 3. **Lens version ↔ experiment tag pairing**: the release tag `<lensVersion>.<numericSuffix>` is what pairs a build to a Lens version. Bumping `peerDependencies` to a newer `@lensapp/*` version is only safe once a Lens release contains it and you're tagging against that Lens version.
+
+## Cross-Repo Contract Surface
+
+Some monorepo files are part of a **cross-repo contract** with this repo — a change on either side breaks already-shipped experiments unless coordinated. If you're touching (or asking a monorepo author to touch) any of these, treat it as a coordinated release, not a routine change.
+
+| Surface | Monorepo location | This repo's counterpart |
+|---------|-------------------|-------------------------|
+| GitHub Release URLs | `packages/features/experimental-features/lab-experiment/src/_private/experiments-repo-urls.ts` | Release artifact layout produced by `.github/workflows/release.yml` |
+| Manifest schema (zod) | `packages/features/experimental-features/lab-experiment/src/_private/fetch-manifest.injectable.ts` | `infrastructure/publish/generate-manifest.ts` output shape |
+| Release tag pattern `<lensVersion>.<suffix>` | `packages/features/experimental-features/lab-experiment/src/_private/resolve-experiments-release-tag.injectable.ts` | Tag chosen when cutting a release |
+| Ed25519 public key (PEM) | `packages/features/experimental-features/lab-experiment/src/_private/public-key.injectable.ts` | `EXPERIMENT_SIGNING_PRIVATE_KEY` GH Actions secret |
+| Signing algorithm (Ed25519 over the fetched content's UTF-8 bytes, signature base64-encoded) | `packages/features/experimental-features/lab-experiment/src/_private/verify-ed25519-signature.injectable.ts` | `infrastructure/sign/sign-bundle.ts` |
+| SHA-256 checksum over the fetched content's UTF-8 bytes | `packages/features/experimental-features/lab-experiment/src/_private/verify-sha256-checksum.injectable.ts` | `infrastructure/publish/generate-manifest.ts` |
+| Load mechanism: ephemeral extension | `installExtensionAsEphemeralDirectlyInjectionToken` from `@lensapp/dynamic-features-contracts` | The experiment bundle shape that mechanism expects |
+
+### Key rotation
+
+Rotating the signing keypair is a coordinated cross-repo ship:
+
+1. Generate a new keypair (`infrastructure/sign/generate-keypair.ts`).
+2. Update the `EXPERIMENT_SIGNING_PRIVATE_KEY` secret in this repo.
+3. Update the PEM constant in `publicKeyInjectable` in the monorepo.
+4. Release the monorepo; only then cut the next experiments tag signed with the new key. Until the new monorepo release is live, clients on the old public key will reject the new signatures.
 
 ## What The Build Treats As External (NOT Bundled)
 
