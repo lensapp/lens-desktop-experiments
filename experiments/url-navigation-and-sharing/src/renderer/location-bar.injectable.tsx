@@ -4,11 +4,13 @@ import { useSyncInject } from "@lensapp/use-sync-inject";
 import { useInjectAsReactive } from "@lensapp/use-inject-as-reactive";
 import { activeClusterEntityForSelectedTabInjectionToken } from "@lensapp/kubernetes-resources";
 import { selectedClusterTabInjectionToken } from "@lensapp/kubernetes-resources";
+import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
 import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
 import { observer } from "mobx-react";
 import React from "react";
 import { synthesizeBreadcrumb } from "./synthesize-breadcrumb";
+import { labelForTabType } from "./label-for-tab-type";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
@@ -55,18 +57,21 @@ type ClusterBreadcrumbProps = {
   readonly tabId: string;
   readonly clusterId: string;
   readonly clusterName: string;
-  readonly kubeResource: string;
+  readonly resourcePath: string;
 };
 
-const ClusterBreadcrumb = observer(({ tabId, clusterId, clusterName, kubeResource }: ClusterBreadcrumbProps) => {
-  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId }).get()?.get();
+const ClusterBreadcrumb = observer(({ tabId, clusterId, clusterName, resourcePath }: ClusterBreadcrumbProps) => {
+  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+    .get()
+    ?.get();
   const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
 
   const segments = synthesizeBreadcrumb({
     clusterName,
     namespaces,
-    resourceType: kubeResource,
+    resourcePath,
     resourceName: kubeObject?.metadata.name,
+    nonClusterLabel: undefined,
   });
 
   return <LocationBarView segments={segments} />;
@@ -75,14 +80,22 @@ const ClusterBreadcrumb = observer(({ tabId, clusterId, clusterName, kubeResourc
 const LocationBar = observer(() => {
   const activeClusterEntity = useSyncInject(activeClusterEntityForSelectedTabInjectionToken).get();
   const selectedClusterTab = useInjectAsReactive(selectedClusterTabInjectionToken).get()?.get();
+  const selectedTab = useSyncInject(selectedTabReactiveInjectionToken).get();
 
   if (!activeClusterEntity || !selectedClusterTab) {
-    return <LocationBarView segments={synthesizeBreadcrumb({
-      clusterName: undefined,
-      namespaces: undefined,
-      resourceType: undefined,
-      resourceName: undefined,
-    })} />;
+    const nonClusterLabel = selectedTab ? labelForTabType(selectedTab.type) : undefined;
+
+    return (
+      <LocationBarView
+        segments={synthesizeBreadcrumb({
+          clusterName: undefined,
+          namespaces: undefined,
+          resourcePath: undefined,
+          resourceName: undefined,
+          nonClusterLabel,
+        })}
+      />
+    );
   }
 
   return (
@@ -90,7 +103,7 @@ const LocationBar = observer(() => {
       tabId={selectedClusterTab.tabId}
       clusterId={selectedClusterTab.clusterId}
       clusterName={activeClusterEntity.metadata.name}
-      kubeResource={selectedClusterTab.kubeResource}
+      resourcePath={selectedClusterTab.kubeResource}
     />
   );
 });
