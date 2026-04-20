@@ -5,6 +5,10 @@
  *
  * Unknown tab types fall back to the raw type id so the user still sees
  * a stable identifier rather than a silent "Lens" label.
+ *
+ * TODO: replace with an additive `tabLabelInjectionToken` that each
+ * tab-owning feature contributes to, then injectMany here. Blocked on
+ * an additive monorepo PR — see .knowledge/rules.md §2.
  */
 const labelsByTabType: Readonly<Record<string, string>> = {
   welcome: "Welcome",
