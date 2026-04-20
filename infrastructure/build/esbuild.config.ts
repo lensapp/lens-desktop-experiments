@@ -5,15 +5,7 @@ import module from "node:module";
 
 const nodeBuiltins = module.builtinModules.flatMap((m) => [m, `node:${m}`]);
 
-const external = [
-  ...nodeBuiltins,
-  "@lensapp/*",
-  "mobx",
-  "zod",
-  "electron",
-  "react",
-  "react-dom",
-];
+const external = [...nodeBuiltins, "@lensapp/*", "mobx", "zod", "electron", "react", "react-dom"];
 
 export interface BuildExperimentOptions {
   experimentDir: string;
