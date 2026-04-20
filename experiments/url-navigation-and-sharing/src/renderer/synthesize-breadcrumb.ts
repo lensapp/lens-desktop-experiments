@@ -1,13 +1,11 @@
-export type LocationBarInput = {
-  readonly clusterName: string | undefined;
+export type ClusterBreadcrumbInput = {
+  readonly clusterName: string;
   readonly namespaces: readonly string[] | undefined;
   readonly resourcePath: string | undefined;
   readonly resourceName: string | undefined;
-  readonly nonClusterLabel: string | undefined;
 };
 
 const allNamespacesSelectedValue = "*";
-const defaultNonClusterLabel = "Lens";
 const noNamespaceLabel = "—";
 
 /**
@@ -15,8 +13,9 @@ const noNamespaceLabel = "—";
  * The breadcrumb skips the namespace segment for these even if a
  * namespace filter is active, because it doesn't apply to them.
  *
- * Until @lensapp/kube-resource exposes kubeResourceIsNamespaced publicly,
- * this list has to track the built-in cluster-scoped kinds by hand.
+ * TODO: replace with `kubeResourceIsNamespaced` once that predicate is
+ * exposed publicly from `@lensapp/kube-resource`. Until then, this list
+ * has to track the built-in cluster-scoped kinds by hand.
  */
 const clusterScopedPluralNames: ReadonlySet<string> = new Set([
   "clusterrolebindings",
@@ -39,8 +38,6 @@ const pluralNameFromResourcePath = (path: string): string => {
   return segments[segments.length - 1] ?? path;
 };
 
-const isClusterScopedPluralName = (pluralName: string): boolean => clusterScopedPluralNames.has(pluralName);
-
 const formatNamespaces = (namespaces: readonly string[]): string => {
   if (namespaces.length === 0) {
     return noNamespaceLabel;
@@ -57,16 +54,12 @@ const formatNamespaces = (namespaces: readonly string[]): string => {
   return `${namespaces.length} namespaces`;
 };
 
-export const synthesizeBreadcrumb = (input: LocationBarInput): readonly string[] => {
-  if (!input.clusterName) {
-    return [input.nonClusterLabel ?? defaultNonClusterLabel];
-  }
-
+export const synthesizeClusterBreadcrumb = (input: ClusterBreadcrumbInput): readonly string[] => {
   const segments: string[] = [input.clusterName];
 
   const resourcePluralName = input.resourcePath ? pluralNameFromResourcePath(input.resourcePath) : undefined;
 
-  const resourceIsClusterScoped = resourcePluralName !== undefined && isClusterScopedPluralName(resourcePluralName);
+  const resourceIsClusterScoped = resourcePluralName !== undefined && clusterScopedPluralNames.has(resourcePluralName);
 
   if (input.namespaces !== undefined && !resourceIsClusterScoped) {
     segments.push(formatNamespaces(input.namespaces));

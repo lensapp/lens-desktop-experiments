@@ -2,80 +2,76 @@ import { getInjectable } from "@lensapp/injectable";
 import { leftItemInjectionToken } from "@lensapp/top-bar";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { useInjectAsReactive } from "@lensapp/use-inject-as-reactive";
-import { activeClusterEntityForSelectedTabInjectionToken } from "@lensapp/kubernetes-resources";
-import { selectedClusterTabInjectionToken } from "@lensapp/kubernetes-resources";
+import {
+  activeClusterEntityForSelectedTabInjectionToken,
+  selectedClusterTabInjectionToken,
+} from "@lensapp/kubernetes-resources";
 import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
 import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
+import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
+import { Div, Span } from "@lensapp/element-components";
 import { observer } from "mobx-react";
 import React from "react";
-import { synthesizeBreadcrumb } from "./synthesize-breadcrumb";
+import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
+const defaultNonClusterLabel = "Lens";
 
 type LocationBarViewProps = {
   readonly segments: readonly string[];
 };
 
 const LocationBarView = ({ segments }: LocationBarViewProps) => (
-  <div
+  <Div
     data-location-bar-test
-    style={{
-      display: "flex",
-      alignItems: "center",
-      padding: "0 12px",
-      fontFamily: "monospace",
-      gap: 6,
-      minWidth: 0,
-      overflow: "hidden",
-    }}
+    $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+    $padding={{ horizontal: "s" }}
+    $overflow="hidden"
+    $style={{ fontFamily: "monospace", minWidth: 0 }}
   >
     {segments.map((segment, index) => (
-      <React.Fragment key={`${index}-${segment}`}>
+      <React.Fragment key={index}>
         {index > 0 && (
-          <span aria-hidden style={{ opacity: 0.5 }}>
+          <Span aria-hidden $style={{ opacity: 0.5 }}>
             {segmentSeparator}
-          </span>
+          </Span>
         )}
-        <span
-          style={{
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
+        <Span $font={{ noWrap: true, textOverflow: "ellipsis" }} $overflow="hidden">
           {segment}
-        </span>
+        </Span>
       </React.Fragment>
     ))}
-  </div>
+  </Div>
 );
 
 type ClusterBreadcrumbProps = {
   readonly tabId: string;
   readonly clusterId: string;
-  readonly clusterName: string;
+  readonly fallbackClusterName: string;
   readonly resourcePath: string;
 };
 
-const ClusterBreadcrumb = observer(({ tabId, clusterId, clusterName, resourcePath }: ClusterBreadcrumbProps) => {
-  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
-    .get()
-    ?.get();
-  const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
+const ClusterBreadcrumb = observer(
+  ({ tabId, clusterId, fallbackClusterName, resourcePath }: ClusterBreadcrumbProps) => {
+    const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
+    const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+      .get()
+      ?.get();
+    const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
 
-  const segments = synthesizeBreadcrumb({
-    clusterName,
-    namespaces,
-    resourcePath,
-    resourceName: kubeObject?.metadata.name,
-    nonClusterLabel: undefined,
-  });
+    const segments = synthesizeClusterBreadcrumb({
+      clusterName: displayName ?? fallbackClusterName,
+      namespaces,
+      resourcePath,
+      resourceName: kubeObject?.metadata.name,
+    });
 
-  return <LocationBarView segments={segments} />;
-});
+    return <LocationBarView segments={segments} />;
+  },
+);
 
 const LocationBar = observer(() => {
   const activeClusterEntity = useSyncInject(activeClusterEntityForSelectedTabInjectionToken).get();
@@ -83,26 +79,16 @@ const LocationBar = observer(() => {
   const selectedTab = useSyncInject(selectedTabReactiveInjectionToken).get();
 
   if (!activeClusterEntity || !selectedClusterTab) {
-    const nonClusterLabel = selectedTab ? labelForTabType(selectedTab.type) : undefined;
+    const label = selectedTab ? labelForTabType(selectedTab.type) : defaultNonClusterLabel;
 
-    return (
-      <LocationBarView
-        segments={synthesizeBreadcrumb({
-          clusterName: undefined,
-          namespaces: undefined,
-          resourcePath: undefined,
-          resourceName: undefined,
-          nonClusterLabel,
-        })}
-      />
-    );
+    return <LocationBarView segments={[label]} />;
   }
 
   return (
     <ClusterBreadcrumb
       tabId={selectedClusterTab.tabId}
       clusterId={selectedClusterTab.clusterId}
-      clusterName={activeClusterEntity.metadata.name}
+      fallbackClusterName={activeClusterEntity.metadata.name}
       resourcePath={selectedClusterTab.kubeResource}
     />
   );

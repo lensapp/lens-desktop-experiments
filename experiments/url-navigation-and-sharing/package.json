@@ -16,6 +16,8 @@
   },
   "main": "./dist/index.js",
   "peerDependencies": {
+    "@lensapp/cluster-common": "^6.0.2",
+    "@lensapp/element-components": "^3.3.0",
     "@lensapp/feature-core": "^7.2.0",
     "@lensapp/injectable": "^21.0.1",
     "@lensapp/kube-object-details-panel": "^4.1.2",
@@ -30,6 +32,8 @@
     "react": "^19.0.0"
   },
   "devDependencies": {
+    "@lensapp/cluster-common": "^6.0.2",
+    "@lensapp/element-components": "^3.3.0",
     "@lensapp/feature-core": "^7.2.0",
     "@lensapp/injectable": "^21.0.1",
     "@lensapp/kube-object-details-panel": "^4.1.2",
