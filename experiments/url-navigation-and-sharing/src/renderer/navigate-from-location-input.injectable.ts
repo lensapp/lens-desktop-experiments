@@ -3,7 +3,9 @@ import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
+import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
 import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
+import { tabTypeForLabel } from "./label-for-tab-type";
 
 export type NavigationFailure =
   | { readonly kind: "cluster-not-found"; readonly clusterName: string }
@@ -21,6 +23,28 @@ const navigateFromLocationInputInjectable = getInjectable({
   instantiate:
     (di): NavigateFromLocationInput =>
     async (input) => {
+      const isJustFirstSegment =
+        input.namespace === undefined && input.resourcePluralName === undefined && input.resourceName === undefined;
+
+      if (isJustFirstSegment) {
+        const tabType = tabTypeForLabel(input.clusterName);
+
+        if (tabType) {
+          const findTabId = await di.inject(findTabIdInjectionToken, tabType);
+          const selectTabById = await di.inject(selectTabByIdInjectionToken);
+          const existingTabId = findTabId(() => true);
+
+          if (existingTabId) {
+            selectTabById(existingTabId);
+          } else {
+            const createTab = await di.inject(createTabInjectionToken, tabType);
+            selectTabById(createTab());
+          }
+
+          return undefined;
+        }
+      }
+
       const clusters = di.inject(clustersInjectionToken).get();
       const cluster = clusters.find((candidate) => candidate.name === input.clusterName);
 

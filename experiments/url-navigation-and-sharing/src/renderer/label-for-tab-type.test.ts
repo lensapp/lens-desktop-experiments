@@ -1,4 +1,4 @@
-import { labelForTabType } from "./label-for-tab-type";
+import { labelForTabType, tabTypeForLabel } from "./label-for-tab-type";
 
 describe("labelForTabType", () => {
   describe("given a known built-in tab type", () => {
@@ -30,6 +30,38 @@ describe("labelForTabType", () => {
   describe("given an unknown tab type", () => {
     it("falls back to the raw tab-type id so it is still identifiable", () => {
       expect(labelForTabType("some-third-party-tab")).toBe("some-third-party-tab");
+    });
+  });
+});
+
+describe("tabTypeForLabel", () => {
+  describe("given the display label of a known built-in tab", () => {
+    it("resolves Preferences to its tab type", () => {
+      expect(tabTypeForLabel("Preferences")).toBe("preferences");
+    });
+
+    it("resolves Welcome to its tab type", () => {
+      expect(tabTypeForLabel("Welcome")).toBe("welcome");
+    });
+
+    it('resolves "Release notes" to its tab type', () => {
+      expect(tabTypeForLabel("Release notes")).toBe("release-notes");
+    });
+  });
+
+  describe("given a label that differs only in case or whitespace", () => {
+    it("matches lowercased input", () => {
+      expect(tabTypeForLabel("preferences")).toBe("preferences");
+    });
+
+    it("trims surrounding whitespace", () => {
+      expect(tabTypeForLabel("  Preferences  ")).toBe("preferences");
+    });
+  });
+
+  describe("given a label that doesn't correspond to any built-in tab", () => {
+    it("returns undefined", () => {
+      expect(tabTypeForLabel("Something else")).toBeUndefined();
     });
   });
 });
