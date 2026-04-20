@@ -9,6 +9,7 @@ import { kubeObjectDetailsPanelFeature } from "@lensapp/kube-object-details-pane
 import { clusterCommonFeature } from "@lensapp/cluster-common";
 import { clusterSourceFeature } from "@lensapp/cluster-source";
 import { kubeResourceFeature } from "@lensapp/kube-resource";
+import { lensShareRendererFeature } from "@lensapp/share-renderer";
 import { elementComponentFeature } from "@lensapp/element-components";
 
 export const urlNavigationAndSharingRendererFeature = getFeature({
@@ -24,6 +25,7 @@ export const urlNavigationAndSharingRendererFeature = getFeature({
     clusterCommonFeature,
     clusterSourceFeature,
     kubeResourceFeature,
+    lensShareRendererFeature,
     elementComponentFeature,
   ],
 });

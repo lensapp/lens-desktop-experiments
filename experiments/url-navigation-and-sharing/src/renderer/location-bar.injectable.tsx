@@ -16,10 +16,12 @@ import React, { useCallback, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
+import { isLensUrl, parseLensUrl } from "./parse-lens-url";
 import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
 } from "./navigate-from-location-input.injectable";
+import { navigateFromLensUrlInjectionToken } from "./navigate-from-lens-url.injectable";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
@@ -114,6 +116,21 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onSubmit, value],
   );
 
+  // Paste of a lens:// URL submits immediately: the user isn't authoring a
+  // path, they're handing off a shareable link and expect navigation.
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = event.clipboardData.getData("text");
+
+      if (isLensUrl(pasted)) {
+        event.preventDefault();
+        setValue(pasted);
+        onSubmit(pasted);
+      }
+    },
+    [onSubmit],
+  );
+
   return (
     <Form
       onSubmit={handleSubmit}
@@ -126,6 +143,7 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onBlur={onCancel}
         aria-label="Location input"
         aria-invalid={errorMessage !== undefined}
@@ -154,6 +172,7 @@ type EditableLocationBarProps = {
 
 const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
+  const navigateFromLensUrl = useSyncInject(navigateFromLensUrlInjectionToken);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -169,6 +188,20 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
 
   const submitEdit = useCallback(
     async (value: string) => {
+      if (isLensUrl(value)) {
+        const lensUrl = parseLensUrl(value);
+
+        if (!lensUrl) {
+          setErrorMessage("Malformed lens:// URL");
+          return;
+        }
+
+        await navigateFromLensUrl(lensUrl);
+        setIsEditing(false);
+        setErrorMessage(undefined);
+        return;
+      }
+
       const parsed = parseLocationBarInput(value);
 
       if (!parsed) {
@@ -186,7 +219,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
       setIsEditing(false);
       setErrorMessage(undefined);
     },
-    [navigate],
+    [navigate, navigateFromLensUrl],
   );
 
   if (isEditing) {
