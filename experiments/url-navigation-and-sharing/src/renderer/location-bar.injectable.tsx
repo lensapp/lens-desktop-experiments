@@ -43,7 +43,7 @@ const LocationBarView = ({ segments, onEditRequested }: LocationBarViewProps) =>
   const content = (
     <>
       {segments.map((segment, index) => (
-        <React.Fragment key={index}>
+        <React.Fragment key={`${index}:${segment}`}>
           {index > 0 && (
             <Span aria-hidden $style={{ opacity: 0.5 }}>
               {segmentSeparator}
@@ -106,6 +106,22 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onCancel],
   );
 
+  // Only cancel when focus leaves the form entirely — otherwise clicking the
+  // inline error message (or any future in-form control) would tear down the
+  // input mid-interaction.
+  const handleBlur = useCallback(
+    (event: React.FocusEvent<HTMLFormElement>) => {
+      const nextFocus = event.relatedTarget as Node | null;
+
+      if (nextFocus && event.currentTarget.contains(nextFocus)) {
+        return;
+      }
+
+      onCancel();
+    },
+    [onCancel],
+  );
+
   const handleSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -117,22 +133,22 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
   return (
     <Form
       onSubmit={handleSubmit}
+      onBlur={handleBlur}
       $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
       $padding={{ horizontal: "s" }}
-      $overflow="hidden"
-      $style={{ fontFamily: "monospace", minWidth: 0, flex: 1 }}
+      $style={{ fontFamily: "monospace", width: "min(40rem, 60vw)" }}
     >
       <Input
         autoFocus
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
-        onBlur={onCancel}
         aria-label="Location input"
         aria-invalid={errorMessage !== undefined}
         $style={{
           fontFamily: "monospace",
-          width: "100%",
+          flex: 1,
+          minWidth: 0,
           border: "none",
           outline: "none",
           background: "transparent",
@@ -140,7 +156,7 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
         }}
       />
       {errorMessage && (
-        <Span role="alert" $style={{ color: "var(--colorError, #e53935)", whiteSpace: "nowrap" }}>
+        <Span role="alert" $style={{ color: "var(--colorError)", whiteSpace: "nowrap" }}>
           {errorMessage}
         </Span>
       )}
@@ -237,7 +253,7 @@ const LocationBar = observer(() => {
   if (!activeClusterEntity || !selectedClusterTab) {
     const label = selectedTab ? labelForTabType(selectedTab.type) : defaultNonClusterLabel;
 
-    return <EditableLocationBar segments={[label]} />;
+    return <LocationBarView segments={[label]} />;
   }
 
   return (
