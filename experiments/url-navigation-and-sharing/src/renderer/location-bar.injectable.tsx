@@ -253,7 +253,7 @@ const LocationBar = observer(() => {
   if (!activeClusterEntity || !selectedClusterTab) {
     const label = selectedTab ? labelForTabType(selectedTab.type) : defaultNonClusterLabel;
 
-    return <LocationBarView segments={[label]} />;
+    return <EditableLocationBar segments={[label]} />;
   }
 
   return (

@@ -20,3 +20,14 @@ const labelsByTabType: Readonly<Record<string, string>> = {
 };
 
 export const labelForTabType = (tabType: string): string => labelsByTabType[tabType] ?? tabType;
+
+const tabTypeByNormalizedLabel: ReadonlyMap<string, string> = new Map(
+  Object.entries(labelsByTabType).map(([tabType, label]) => [label.toLowerCase(), tabType]),
+);
+
+/**
+ * Inverse of `labelForTabType` — matches case-insensitively so users can type
+ * `preferences` or `Preferences` and land on the same tab.
+ */
+export const tabTypeForLabel = (label: string): string | undefined =>
+  tabTypeByNormalizedLabel.get(label.trim().toLowerCase());
