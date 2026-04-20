@@ -1,5 +1,4 @@
 import path from "node:path";
-import fs from "node:fs";
 import glob from "fast-glob";
 import { buildExperiment } from "./esbuild.config";
 
