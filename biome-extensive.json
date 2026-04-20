@@ -1,0 +1,21 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.3.5/schema.json",
+  "extends": ["./node_modules/@lensapp/code-style/biome-base.jsonc"],
+  "plugins": [
+    "./node_modules/@lensapp/code-style/plugins/no-use-any-with-function-mocks.grit",
+    "./node_modules/@lensapp/code-style/plugins/no-use-jest-mock-resolve-or-reject.grit",
+    "./node_modules/@lensapp/code-style/plugins/ban-use-inject.grit",
+    "./node_modules/@lensapp/code-style/plugins/ban-placeholder-component.grit"
+  ],
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUndeclaredDependencies": "error"
+      },
+      "nursery": {
+        "noImportCycles": "error",
+        "noFloatingPromises": "error"
+      }
+    }
+  }
+}

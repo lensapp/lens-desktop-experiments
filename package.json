@@ -10,12 +10,16 @@
     "build": "tsx infrastructure/build/build.ts",
     "build:experiment": "tsx infrastructure/build/build.ts --experiment",
     "typecheck": "tsx infrastructure/build/typecheck.ts",
+    "lint": "lens-verify-code-style",
+    "lint:extensive": "lens-verify-code-style --extensive",
+    "lint:fix": "lens-verify-code-style --fix",
     "test": "jest --passWithNoTests --forceExit",
     "sign": "tsx infrastructure/sign/sign-bundle.ts",
     "generate-package-json": "tsx infrastructure/publish/generate-runtime-package-json.ts",
     "manifest": "tsx infrastructure/publish/generate-manifest.ts"
   },
   "devDependencies": {
+    "@lensapp/code-style": "^1.2.0",
     "@types/jest": "^29.5.0",
     "esbuild": "^0.24.0",
     "fast-glob": "^3.3.2",
