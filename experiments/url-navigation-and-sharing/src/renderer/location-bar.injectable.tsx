@@ -13,8 +13,8 @@ import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { getCustomProtocolUrl } from "@lensapp/share-common";
 import { Button, ClickableDiv, Div, Form, Input, Li, Span, Ul } from "@lensapp/element-components";
 import { CheckIcon, ContentCopyIcon, ShareIcon } from "@lensapp/icon";
-import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { allNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
+import { clusterDescriptorsInjectable, findClusterByDisplayNameOrName } from "./cluster-descriptors.injectable";
 import { type KubeResourceKind, kubeResourcesForKindInjectionToken } from "@lensapp/kube-resource";
 import { isLoaded } from "@lensapp/loadable-utilities";
 import { copyToClipboardInjectionToken } from "@lensapp/electron";
@@ -148,7 +148,8 @@ const LocationBarView = ({ segments, onEditRequested }: LocationBarViewProps) =>
 type LocationBarInputProps = {
   readonly initialValue: string;
   readonly errorMessage: string | undefined;
-  readonly onSubmit: (value: string) => void;
+  readonly onSubmit: (value: string) => Promise<boolean>;
+  readonly onFinish: () => void;
   readonly onCancel: () => void;
 };
 
@@ -361,302 +362,318 @@ const insertSuggestionIntoInput = (
   return { nextValue, nextCaret };
 };
 
-const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCancel }: LocationBarInputProps) => {
-  const clusters = useSyncInject(clustersInjectionToken).get();
-  const registeredPlurals = useSyncInject(registeredResourcePluralsInjectionToken);
-  const resolveKindOrUndefined = useSyncInject(resolveKubeResourceKindOrUndefinedInjectionToken);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const listboxId = useId();
-  const [value, setValue] = useState(initialValue);
-  const [caret, setCaret] = useState(initialValue.length);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [namespaceSuggestions, setNamespaceSuggestions] = useState<readonly Suggestion[]>([]);
-  const [resourceNameSuggestions, setResourceNameSuggestions] = useState<readonly Suggestion[]>([]);
-  const [suppressDropdown, setSuppressDropdown] = useState(false);
+const LocationBarInput = observer(
+  ({ initialValue, errorMessage, onSubmit, onFinish, onCancel }: LocationBarInputProps) => {
+    const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
+    const registeredPlurals = useSyncInject(registeredResourcePluralsInjectionToken);
+    const resolveKindOrUndefined = useSyncInject(resolveKubeResourceKindOrUndefinedInjectionToken);
+    const inputRef = useRef<HTMLInputElement>(null);
+    const listboxId = useId();
+    const [value, setValue] = useState(initialValue);
+    const [caret, setCaret] = useState(initialValue.length);
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [namespaceSuggestions, setNamespaceSuggestions] = useState<readonly Suggestion[]>([]);
+    const [resourceNameSuggestions, setResourceNameSuggestions] = useState<readonly Suggestion[]>([]);
+    const [suppressDropdown, setSuppressDropdown] = useState(false);
 
-  const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
-  const activeSegment = getActiveSegment(value, caret, clusterNames);
-  const parsed = parseLocationBarInput(value, clusterNames);
-  const resolvedClusterId = parsed
-    ? clusters.find((candidate) => candidate.name === parsed.clusterName)?.id
-    : undefined;
-  const resolvedKind = useMemo(
-    () => (parsed?.resourcePluralName ? resolveKindOrUndefined(parsed.resourcePluralName) : undefined),
-    [parsed?.resourcePluralName, resolveKindOrUndefined],
-  );
-  const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
+    const clusterDisplayNames = useMemo(
+      () => clusterDescriptors.map((descriptor) => descriptor.displayName),
+      [clusterDescriptors],
+    );
+    const activeSegment = getActiveSegment(value, caret, clusterDisplayNames);
+    const parsed = parseLocationBarInput(value, clusterDisplayNames);
+    const resolvedClusterId = parsed
+      ? findClusterByDisplayNameOrName(clusterDescriptors, parsed.clusterName)?.id
+      : undefined;
+    const resolvedKind = useMemo(
+      () => (parsed?.resourcePluralName ? resolveKindOrUndefined(parsed.resourcePluralName) : undefined),
+      [parsed?.resourcePluralName, resolveKindOrUndefined],
+    );
+    const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
 
-  const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
-    if (suppressDropdown) {
-      return [];
-    }
-
-    if (activeSegment.index === 0) {
-      return suggestClusters(clusterNames, activeSegment.text);
-    }
-
-    if (activeSegment.index === 2) {
-      return suggestResourcePlurals(registeredPlurals, activeSegment.text);
-    }
-
-    return [];
-  }, [suppressDropdown, activeSegment.index, activeSegment.text, clusterNames, registeredPlurals]);
-
-  const showNamespaceDropdown = !suppressDropdown && activeSegment.index === 1 && resolvedClusterId !== undefined;
-
-  const showResourceNameDropdown =
-    !suppressDropdown && activeSegment.index === 3 && resolvedClusterId !== undefined && resolvedKind !== undefined;
-
-  const activeSuggestions: readonly Suggestion[] = showResourceNameDropdown
-    ? resourceNameSuggestions
-    : showNamespaceDropdown
-      ? namespaceSuggestions
-      : staticSuggestions;
-
-  useEffect(() => {
-    setActiveIndex((previous) => {
-      if (activeSuggestions.length === 0) {
-        return 0;
+    const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
+      if (suppressDropdown) {
+        return [];
       }
 
-      return Math.min(previous, activeSuggestions.length - 1);
-    });
-  }, [activeSuggestions.length]);
+      if (activeSegment.index === 0) {
+        return suggestClusters(clusterDisplayNames, activeSegment.text);
+      }
 
-  const updateCaretFromInput = useCallback(() => {
-    const input = inputRef.current;
+      if (activeSegment.index === 2) {
+        return suggestResourcePlurals(registeredPlurals, activeSegment.text);
+      }
 
-    if (!input) {
-      return;
-    }
+      return [];
+    }, [suppressDropdown, activeSegment.index, activeSegment.text, clusterDisplayNames, registeredPlurals]);
 
-    setCaret(input.selectionStart ?? input.value.length);
-  }, []);
+    const showNamespaceDropdown = !suppressDropdown && activeSegment.index === 1 && resolvedClusterId !== undefined;
 
-  const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(event.target.value);
-    setCaret(event.target.selectionStart ?? event.target.value.length);
-    setSuppressDropdown(false);
-  }, []);
+    const showResourceNameDropdown =
+      !suppressDropdown && activeSegment.index === 3 && resolvedClusterId !== undefined && resolvedKind !== undefined;
 
-  const handleSelect = useCallback(() => {
-    updateCaretFromInput();
-  }, [updateCaretFromInput]);
+    const activeSuggestions: readonly Suggestion[] = showResourceNameDropdown
+      ? resourceNameSuggestions
+      : showNamespaceDropdown
+        ? namespaceSuggestions
+        : staticSuggestions;
 
-  const handlePaste = useCallback((event: React.ClipboardEvent<HTMLInputElement>) => {
-    const pasted = event.clipboardData.getData("text");
+    useEffect(() => {
+      setActiveIndex((previous) => {
+        if (activeSuggestions.length === 0) {
+          return 0;
+        }
 
-    if (isShareLink(pasted)) {
-      setSuppressDropdown(true);
-    }
-  }, []);
+        return Math.min(previous, activeSuggestions.length - 1);
+      });
+    }, [activeSuggestions.length]);
 
-  const acceptSuggestion = useCallback(
-    (suggestion: Suggestion) => {
-      const { nextValue, nextCaret } = insertSuggestionIntoInput(
-        value,
-        activeSegment.rangeStart,
-        activeSegment.rangeEnd,
-        suggestion.insertText,
-      );
-
-      setValue(nextValue);
-      setCaret(nextCaret);
-      setActiveIndex(0);
-
+    const updateCaretFromInput = useCallback(() => {
       const input = inputRef.current;
 
-      if (input) {
-        window.requestAnimationFrame(() => {
-          input.focus();
-          input.setSelectionRange(nextCaret, nextCaret);
-        });
+      if (!input) {
+        return;
       }
-    },
-    [value, activeSegment.rangeStart, activeSegment.rangeEnd],
-  );
 
-  const dropdownIsOpen = activeSuggestions.length > 0;
+      setCaret(input.selectionStart ?? input.value.length);
+    }, []);
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
+    const handleChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+      setValue(event.target.value);
+      setCaret(event.target.selectionStart ?? event.target.value.length);
+      setSuppressDropdown(false);
+    }, []);
+
+    const handleSelect = useCallback(() => {
+      updateCaretFromInput();
+    }, [updateCaretFromInput]);
+
+    const handlePaste = useCallback((event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = event.clipboardData.getData("text");
+
+      if (isShareLink(pasted)) {
+        setSuppressDropdown(true);
+      }
+    }, []);
+
+    const acceptSuggestion = useCallback(
+      (suggestion: Suggestion) => {
+        const { nextValue, nextCaret } = insertSuggestionIntoInput(
+          value,
+          activeSegment.rangeStart,
+          activeSegment.rangeEnd,
+          suggestion.insertText,
+        );
+
+        setValue(nextValue);
+        setCaret(nextCaret);
+        setActiveIndex(0);
+
+        const input = inputRef.current;
+
+        if (input) {
+          window.requestAnimationFrame(() => {
+            input.focus();
+            input.setSelectionRange(nextCaret, nextCaret);
+          });
+        }
+      },
+      [value, activeSegment.rangeStart, activeSegment.rangeEnd],
+    );
+
+    const dropdownIsOpen = activeSuggestions.length > 0;
+
+    const handleKeyDown = useCallback(
+      (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "Escape") {
+          event.preventDefault();
+          onCancel();
+          return;
+        }
+
+        if (!dropdownIsOpen) {
+          return;
+        }
+
+        if (event.key === "ArrowDown") {
+          event.preventDefault();
+          setActiveIndex((previous) => (previous + 1) % activeSuggestions.length);
+          return;
+        }
+
+        if (event.key === "ArrowUp") {
+          event.preventDefault();
+          setActiveIndex((previous) => (previous - 1 + activeSuggestions.length) % activeSuggestions.length);
+          return;
+        }
+
+        if (event.key === "Tab") {
+          event.preventDefault();
+
+          const pickable = activeSuggestions[activeIndex];
+
+          if (pickable) {
+            acceptSuggestion(pickable);
+          }
+        }
+      },
+      [dropdownIsOpen, activeSuggestions, activeIndex, acceptSuggestion, onCancel],
+    );
+
+    const handleBlur = useCallback(
+      (event: React.FocusEvent<HTMLFormElement>) => {
+        const nextFocus = event.relatedTarget as Node | null;
+
+        if (nextFocus && event.currentTarget.contains(nextFocus)) {
+          return;
+        }
+
         onCancel();
-        return;
-      }
+      },
+      [onCancel],
+    );
 
-      if (!dropdownIsOpen) {
-        return;
-      }
-
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        setActiveIndex((previous) => (previous + 1) % activeSuggestions.length);
-        return;
-      }
-
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        setActiveIndex((previous) => (previous - 1 + activeSuggestions.length) % activeSuggestions.length);
-        return;
-      }
-
-      if (event.key === "Tab") {
+    const handleSubmit = useCallback(
+      async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const pickable = activeSuggestions[activeIndex];
+        const pickable = dropdownIsOpen ? activeSuggestions[activeIndex] : undefined;
+        const isLastSegment = activeSegment.index >= 3;
+
+        let submittedValue = value;
+        let caretAfterAccept = caret;
 
         if (pickable) {
-          acceptSuggestion(pickable);
+          const accepted = insertSuggestionIntoInput(
+            value,
+            activeSegment.rangeStart,
+            activeSegment.rangeEnd,
+            pickable.insertText,
+            !isLastSegment,
+          );
+
+          submittedValue = accepted.nextValue;
+          caretAfterAccept = accepted.nextCaret;
+          setValue(submittedValue);
+          setCaret(caretAfterAccept);
         }
-      }
-    },
-    [dropdownIsOpen, activeSuggestions, activeIndex, acceptSuggestion, onCancel],
-  );
 
-  const handleBlur = useCallback(
-    (event: React.FocusEvent<HTMLFormElement>) => {
-      const nextFocus = event.relatedTarget as Node | null;
+        const success = await onSubmit(submittedValue);
 
-      if (nextFocus && event.currentTarget.contains(nextFocus)) {
-        return;
-      }
+        if (!success) {
+          return;
+        }
 
-      onCancel();
-    },
-    [onCancel],
-  );
+        if (isLastSegment) {
+          onFinish();
+          return;
+        }
 
-  const handleSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+        setActiveIndex(0);
+        setSuppressDropdown(false);
 
-      const pickable = dropdownIsOpen ? activeSuggestions[activeIndex] : undefined;
+        const input = inputRef.current;
 
-      if (!pickable) {
-        onSubmit(value);
-        return;
-      }
-
-      const isLastSegment = activeSegment.index >= 3;
-      const { nextValue, nextCaret } = insertSuggestionIntoInput(
-        value,
+        if (input) {
+          window.requestAnimationFrame(() => {
+            input.focus();
+            input.setSelectionRange(caretAfterAccept, caretAfterAccept);
+          });
+        }
+      },
+      [
+        dropdownIsOpen,
+        activeSuggestions,
+        activeIndex,
+        activeSegment.index,
         activeSegment.rangeStart,
         activeSegment.rangeEnd,
-        pickable.insertText,
-        !isLastSegment,
-      );
+        caret,
+        value,
+        onSubmit,
+        onFinish,
+      ],
+    );
 
-      if (isLastSegment) {
-        onSubmit(nextValue);
-        return;
-      }
+    const activeDescendantId = dropdownIsOpen ? `${listboxId}-option-${activeIndex}` : undefined;
 
-      setValue(nextValue);
-      setCaret(nextCaret);
-      setActiveIndex(0);
-      setSuppressDropdown(false);
-
-      const input = inputRef.current;
-
-      if (input) {
-        window.requestAnimationFrame(() => {
-          input.focus();
-          input.setSelectionRange(nextCaret, nextCaret);
-        });
-      }
-    },
-    [
-      dropdownIsOpen,
-      activeSuggestions,
-      activeIndex,
-      activeSegment.index,
-      activeSegment.rangeStart,
-      activeSegment.rangeEnd,
-      value,
-      onSubmit,
-    ],
-  );
-
-  const activeDescendantId = dropdownIsOpen ? `${listboxId}-option-${activeIndex}` : undefined;
-
-  return (
-    <Form
-      onSubmit={handleSubmit}
-      onBlur={handleBlur}
-      $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
-      $padding={{ horizontal: "s" }}
-      $style={{ fontFamily: "monospace", width: "min(40rem, 60vw)" }}
-    >
-      <Div $style={{ flex: 1, minWidth: 0 }}>
-        <Input
-          ref={inputRef}
-          autoFocus
-          value={value}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onSelect={handleSelect}
-          onPaste={handlePaste}
-          aria-label="Location input"
-          aria-invalid={errorMessage !== undefined}
-          aria-autocomplete="list"
-          role="combobox"
-          aria-expanded={dropdownIsOpen}
-          aria-controls={dropdownIsOpen ? listboxId : undefined}
-          aria-activedescendant={activeDescendantId}
-          $style={{
-            fontFamily: "monospace",
-            width: "100%",
-            minWidth: 0,
-            border: "none",
-            outline: "none",
-            background: "transparent",
-            color: "inherit",
-          }}
-        />
-        {staticSuggestions.length > 0 && (
-          <SuggestionsListbox
-            anchorRef={inputRef}
-            listboxId={listboxId}
-            suggestions={staticSuggestions}
-            activeIndex={activeIndex}
-            onPick={acceptSuggestion}
+    return (
+      <Form
+        onSubmit={handleSubmit}
+        onBlur={handleBlur}
+        $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+        $padding={{ horizontal: "s" }}
+        $style={{ fontFamily: "monospace", width: "min(40rem, 60vw)" }}
+      >
+        <Div $style={{ flex: 1, minWidth: 0 }}>
+          <Input
+            ref={inputRef}
+            autoFocus
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onSelect={handleSelect}
+            onPaste={handlePaste}
+            aria-label="Location input"
+            aria-invalid={errorMessage !== undefined}
+            aria-autocomplete="list"
+            role="combobox"
+            aria-expanded={dropdownIsOpen}
+            aria-controls={dropdownIsOpen ? listboxId : undefined}
+            aria-activedescendant={activeDescendantId}
+            $style={{
+              fontFamily: "monospace",
+              width: "100%",
+              minWidth: 0,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              color: "inherit",
+            }}
           />
+          {staticSuggestions.length > 0 && (
+            <SuggestionsListbox
+              anchorRef={inputRef}
+              listboxId={listboxId}
+              suggestions={staticSuggestions}
+              activeIndex={activeIndex}
+              onPick={acceptSuggestion}
+            />
+          )}
+          {showNamespaceDropdown && (
+            <NamespaceSuggestions
+              anchorRef={inputRef}
+              clusterId={resolvedClusterId as string}
+              query={activeSegment.text}
+              listboxId={listboxId}
+              activeIndex={activeIndex}
+              onPick={acceptSuggestion}
+              onSuggestionsChange={setNamespaceSuggestions}
+            />
+          )}
+          {showResourceNameDropdown && (
+            <ResourceNameSuggestions
+              anchorRef={inputRef}
+              clusterId={resolvedClusterId as string}
+              kind={resolvedKind as KubeResourceKind}
+              namespace={resolvedNamespace}
+              query={activeSegment.text}
+              listboxId={listboxId}
+              activeIndex={activeIndex}
+              onPick={acceptSuggestion}
+              onSuggestionsChange={setResourceNameSuggestions}
+            />
+          )}
+        </Div>
+        {errorMessage && (
+          <Span role="alert" $style={{ color: "var(--colorError)", whiteSpace: "nowrap" }}>
+            {errorMessage}
+          </Span>
         )}
-        {showNamespaceDropdown && (
-          <NamespaceSuggestions
-            anchorRef={inputRef}
-            clusterId={resolvedClusterId as string}
-            query={activeSegment.text}
-            listboxId={listboxId}
-            activeIndex={activeIndex}
-            onPick={acceptSuggestion}
-            onSuggestionsChange={setNamespaceSuggestions}
-          />
-        )}
-        {showResourceNameDropdown && (
-          <ResourceNameSuggestions
-            anchorRef={inputRef}
-            clusterId={resolvedClusterId as string}
-            kind={resolvedKind as KubeResourceKind}
-            namespace={resolvedNamespace}
-            query={activeSegment.text}
-            listboxId={listboxId}
-            activeIndex={activeIndex}
-            onPick={acceptSuggestion}
-            onSuggestionsChange={setResourceNameSuggestions}
-          />
-        )}
-      </Div>
-      {errorMessage && (
-        <Span role="alert" $style={{ color: "var(--colorError)", whiteSpace: "nowrap" }}>
-          {errorMessage}
-        </Span>
-      )}
-    </Form>
-  );
-});
+      </Form>
+    );
+  },
+);
 
 type EditableLocationBarProps = {
   readonly segments: readonly string[];
@@ -665,8 +682,11 @@ type EditableLocationBarProps = {
 const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
-  const clusters = useSyncInject(clustersInjectionToken).get();
-  const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
+  const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
+  const clusterDisplayNames = useMemo(
+    () => clusterDescriptors.map((descriptor) => descriptor.displayName),
+    [clusterDescriptors],
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -696,46 +716,50 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
     setErrorMessage(undefined);
   }, []);
 
+  const finishEdit = useCallback(() => {
+    setIsEditing(false);
+    setErrorMessage(undefined);
+  }, []);
+
   const submitEdit = useCallback(
-    async (value: string) => {
+    async (value: string): Promise<boolean> => {
       if (isShareLink(value)) {
         const parsed = parseShareLink(value);
 
         if (!parsed) {
           setErrorMessage("Malformed share link");
-          return;
+          return false;
         }
 
         const failure = await navigateFromShareLink(parsed);
 
         if (failure) {
           setErrorMessage(shareLinkFailureMessage(failure));
-          return;
+          return false;
         }
 
-        setIsEditing(false);
         setErrorMessage(undefined);
-        return;
+        return true;
       }
 
-      const parsed = parseLocationBarInput(value, clusterNames);
+      const parsed = parseLocationBarInput(value, clusterDisplayNames);
 
       if (!parsed) {
         setErrorMessage("Enter a path like cluster/namespace/pods");
-        return;
+        return false;
       }
 
       const failure = await navigate(parsed);
 
       if (failure) {
         setErrorMessage(failureMessage(failure));
-        return;
+        return false;
       }
 
-      setIsEditing(false);
       setErrorMessage(undefined);
+      return true;
     },
-    [navigate, navigateFromShareLink, clusterNames],
+    [navigate, navigateFromShareLink, clusterDisplayNames],
   );
 
   if (isEditing) {
@@ -744,6 +768,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
         initialValue={segments.join(segmentSeparator)}
         errorMessage={errorMessage}
         onSubmit={submitEdit}
+        onFinish={finishEdit}
         onCancel={cancelEdit}
       />
     );
