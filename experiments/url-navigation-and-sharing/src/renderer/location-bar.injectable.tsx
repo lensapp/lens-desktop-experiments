@@ -346,6 +346,7 @@ const insertSuggestionIntoInput = (
   rangeStart: number,
   rangeEnd: number,
   insertText: string,
+  appendSeparator = false,
 ): { readonly nextValue: string; readonly nextCaret: number } => {
   const slot = value.slice(rangeStart, rangeEnd);
   const leading = slot.slice(0, slot.length - slot.trimStart().length);
@@ -353,8 +354,9 @@ const insertSuggestionIntoInput = (
   const trailing = trailingLength === 0 ? "" : slot.slice(slot.length - trailingLength);
   const before = value.slice(0, rangeStart);
   const after = value.slice(rangeEnd);
-  const nextValue = `${before}${leading}${insertText}${trailing}${after}`;
-  const nextCaret = before.length + leading.length + insertText.length;
+  const separator = appendSeparator && !after.startsWith("/") ? "/" : "";
+  const nextValue = `${before}${leading}${insertText}${separator}${trailing}${after}`;
+  const nextCaret = before.length + leading.length + insertText.length + separator.length;
 
   return { nextValue, nextCaret };
 };
@@ -480,12 +482,6 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
     (event: React.KeyboardEvent<HTMLInputElement>) => {
       if (event.key === "Escape") {
         event.preventDefault();
-
-        if (dropdownIsOpen) {
-          setSuppressDropdown(true);
-          return;
-        }
-
         onCancel();
         return;
       }
@@ -535,9 +531,52 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
   const handleSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      onSubmit(value);
+
+      const pickable = dropdownIsOpen ? activeSuggestions[activeIndex] : undefined;
+
+      if (!pickable) {
+        onSubmit(value);
+        return;
+      }
+
+      const isLastSegment = activeSegment.index >= 3;
+      const { nextValue, nextCaret } = insertSuggestionIntoInput(
+        value,
+        activeSegment.rangeStart,
+        activeSegment.rangeEnd,
+        pickable.insertText,
+        !isLastSegment,
+      );
+
+      if (isLastSegment) {
+        onSubmit(nextValue);
+        return;
+      }
+
+      setValue(nextValue);
+      setCaret(nextCaret);
+      setActiveIndex(0);
+      setSuppressDropdown(false);
+
+      const input = inputRef.current;
+
+      if (input) {
+        window.requestAnimationFrame(() => {
+          input.focus();
+          input.setSelectionRange(nextCaret, nextCaret);
+        });
+      }
     },
-    [onSubmit, value],
+    [
+      dropdownIsOpen,
+      activeSuggestions,
+      activeIndex,
+      activeSegment.index,
+      activeSegment.rangeStart,
+      activeSegment.rangeEnd,
+      value,
+      onSubmit,
+    ],
   );
 
   const activeDescendantId = dropdownIsOpen ? `${listboxId}-option-${activeIndex}` : undefined;
@@ -623,7 +662,7 @@ type EditableLocationBarProps = {
   readonly segments: readonly string[];
 };
 
-const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
+const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
   const clusters = useSyncInject(clustersInjectionToken).get();
@@ -634,6 +673,22 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   const enterEditMode = useCallback(() => {
     setErrorMessage(undefined);
     setIsEditing(true);
+  }, []);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const isModifier = event.ctrlKey || event.metaKey;
+
+      if (isModifier && event.key.toLowerCase() === "l") {
+        event.preventDefault();
+        setErrorMessage(undefined);
+        setIsEditing(true);
+      }
+    };
+
+    window.addEventListener("keydown", handler);
+
+    return () => window.removeEventListener("keydown", handler);
   }, []);
 
   const cancelEdit = useCallback(() => {
@@ -695,7 +750,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   }
 
   return <LocationBarView segments={segments} onEditRequested={enterEditMode} />;
-};
+});
 
 type ClusterToolbarActionsProps = {
   readonly entity: Entity;
