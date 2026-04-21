@@ -391,6 +391,11 @@ const LocationBarInput = observer(
     );
     const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
 
+    const segmentOneIsTerminal = useMemo(
+      () => !value.slice(activeSegment.rangeEnd).includes(segmentSeparator),
+      [value, activeSegment.rangeEnd],
+    );
+
     const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
       if (suppressDropdown) {
         return [];
@@ -400,14 +405,26 @@ const LocationBarInput = observer(
         return suggestClusters(clusterDisplayNames, activeSegment.text);
       }
 
+      if (activeSegment.index === 1 && segmentOneIsTerminal) {
+        return suggestResourcePlurals(registeredPlurals, activeSegment.text);
+      }
+
       if (activeSegment.index === 2) {
         return suggestResourcePlurals(registeredPlurals, activeSegment.text);
       }
 
       return [];
-    }, [suppressDropdown, activeSegment.index, activeSegment.text, clusterDisplayNames, registeredPlurals]);
+    }, [
+      suppressDropdown,
+      activeSegment.index,
+      activeSegment.text,
+      segmentOneIsTerminal,
+      clusterDisplayNames,
+      registeredPlurals,
+    ]);
 
-    const showNamespaceDropdown = !suppressDropdown && activeSegment.index === 1 && resolvedClusterId !== undefined;
+    const showNamespaceDropdown =
+      !suppressDropdown && activeSegment.index === 1 && !segmentOneIsTerminal && resolvedClusterId !== undefined;
 
     const showResourceNameDropdown =
       !suppressDropdown && activeSegment.index === 3 && resolvedClusterId !== undefined && resolvedKind !== undefined;
