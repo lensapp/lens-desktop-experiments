@@ -17,7 +17,7 @@ import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
 import { isMacInjectable } from "@lensapp/vars";
 import type { Entity } from "@lensapp/entity-aggregator";
 import { observer } from "mobx-react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
@@ -304,6 +304,16 @@ const ClusterToolbarActions = ({
   const isMac = useSyncInject(isMacInjectable);
   const [status, setStatus] = useState<"idle" | "copied">("idle");
 
+  useEffect(() => {
+    if (status !== "copied") {
+      return;
+    }
+
+    const handle = setTimeout(() => setStatus("idle"), copyStatusResetMs);
+
+    return () => clearTimeout(handle);
+  }, [status]);
+
   const handleCopy = useCallback(async () => {
     const result = await resolveClusterShareInfo(entity);
 
@@ -322,7 +332,6 @@ const ClusterToolbarActions = ({
 
     copyToClipboard(text);
     setStatus("copied");
-    setTimeout(() => setStatus("idle"), copyStatusResetMs);
   }, [
     resolveClusterShareInfo,
     entity,
