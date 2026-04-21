@@ -1,6 +1,6 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
-import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
+import { clusterDescriptorsInjectable, findClusterByDisplayNameOrName } from "./cluster-descriptors.injectable";
 import {
   createSelfLinkForKubeResourceInjectionToken,
   type KubeResourceKind,
@@ -57,8 +57,8 @@ const navigateFromLocationInputInjectable = getInjectable({
         }
       }
 
-      const clusters = di.inject(clustersInjectionToken);
-      const cluster = clusters.get().find((candidate) => candidate.name === input.clusterName);
+      const clusterDescriptors = di.inject(clusterDescriptorsInjectable);
+      const cluster = findClusterByDisplayNameOrName(clusterDescriptors.get(), input.clusterName);
 
       if (!cluster) {
         return { kind: "cluster-not-found", clusterName: input.clusterName };
