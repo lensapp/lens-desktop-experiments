@@ -1,16 +1,21 @@
-import { connectionTypeForSlug, normalizeSourceSlug, teamworkSourceSlug } from "./source-slug";
+import { connectionTypeForSlug, slugifyNavigatorName, teamworkSourceSlug } from "./source-slug";
 
-describe("normalizeSourceSlug", () => {
-  it("strips the -cluster-source suffix", () => {
-    expect(normalizeSourceSlug("local-kubeconfig-cluster-source")).toBe("local-kubeconfig");
+describe("slugifyNavigatorName", () => {
+  it("lowercases single-word names", () => {
+    expect(slugifyNavigatorName("EKS")).toBe("eks");
   });
 
-  it("leaves ids without the conventional suffix unchanged", () => {
-    expect(normalizeSourceSlug("some-random-id")).toBe("some-random-id");
+  it("hyphenates whitespace in multi-word names", () => {
+    expect(slugifyNavigatorName("Local Kubeconfigs")).toBe("local-kubeconfigs");
+    expect(slugifyNavigatorName("Lens Spaces")).toBe("lens-spaces");
   });
 
-  it("is the identity for an already-stripped slug", () => {
-    expect(normalizeSourceSlug("local-kubeconfig")).toBe("local-kubeconfig");
+  it("collapses runs of whitespace to a single hyphen", () => {
+    expect(slugifyNavigatorName("Some   Source")).toBe("some-source");
+  });
+
+  it("trims leading and trailing whitespace", () => {
+    expect(slugifyNavigatorName("  EKS  ")).toBe("eks");
   });
 });
 
@@ -20,7 +25,7 @@ describe("connectionTypeForSlug", () => {
   });
 
   it("returns direct for every other slug", () => {
-    expect(connectionTypeForSlug("local-kubeconfig")).toBe("direct");
+    expect(connectionTypeForSlug("local-kubeconfigs")).toBe("direct");
     expect(connectionTypeForSlug("eks")).toBe("direct");
     expect(connectionTypeForSlug("some-unknown-source")).toBe("direct");
   });

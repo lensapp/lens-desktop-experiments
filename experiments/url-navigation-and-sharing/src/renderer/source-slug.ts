@@ -1,12 +1,9 @@
-const clusterSourceSuffix = "-cluster-source";
-
-// Cluster sources conventionally register their injectable id with a
-// `-cluster-source` suffix (e.g. `local-kubeconfig-cluster-source`). Stripping
-// it gives a short, human-friendly slug for the share link prefix — e.g.
-// `local-kubeconfig:<hash>/...` rather than the verbose
-// `local-kubeconfig-cluster-source:<hash>/...`.
-export const normalizeSourceSlug = (sourceId: string): string =>
-  sourceId.endsWith(clusterSourceSuffix) ? sourceId.slice(0, -clusterSourceSuffix.length) : sourceId;
+// Direct-cluster slugs are derived from the navigator's display name for the
+// cluster source ("EKS", "Local Kubeconfigs"…). Lowercasing and hyphenating
+// whitespace gives a URL-safe token that matches what the user sees in the
+// sidebar, so the share link's `eks:` / `local-kubeconfigs:` prefix stays
+// recognisable across Lens installs.
+export const slugifyNavigatorName = (name: string): string => name.trim().toLowerCase().replace(/\s+/g, "-");
 
 // Teamwork (Lens Spaces) clusters use a fixed slug. On the paste side, it is
 // the sole signal that tells us to resolve the specifier as a teamwork UUID

@@ -1,11 +1,10 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { getClusterAddressHash, getClusterServerChannel } from "@lensapp/share-common";
 import { clusterSourceInjectionToken } from "@lensapp/cluster-source";
-import { getPredictableIdInjectionToken } from "@lensapp/utility-feature";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";
 import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import type { Entity } from "@lensapp/entity-aggregator";
-import { normalizeSourceSlug, teamworkSourceSlug } from "./source-slug";
+import { slugifyNavigatorName, teamworkSourceSlug } from "./source-slug";
 
 export type ClusterShareInfo = {
   readonly sourceSlug: string;
@@ -23,39 +22,32 @@ export const resolveClusterShareInfoInjectionToken = getInjectionToken<ResolveCl
   id: "resolve-cluster-share-info",
 });
 
-// Direct clusters all land in the entity aggregator through the generic
-// `consume-clusters` entity source, so `entity.metadata.sourceId` collapses to
-// that single value for every cluster-source-derived cluster. To recover the
-// real provider ("eks", "local-kubeconfig", etc.) we walk
-// `clusterSourceInjectionToken` and find the source whose predictable child id
-// matches the entity id — the same linkage `getPredictableId(sourceMeta.id,
-// dto.id)` establishes when clusters are first consumed. Teamwork clusters
-// are identified by the `isSpacesCluster` label and use a fixed slug.
+const directFallbackSlug = "direct";
+
+// A cluster entity carries `metadata.parentId` equal to the ClusterSource
+// entity id, which in turn matches `clusterSourceInjectionToken`'s `meta.id`
+// (see `consume-cluster-sources-from-renderer.injectable.ts`). That gives us a
+// direct lookup from cluster entity → navigator source → navigator name, which
+// we slugify to keep the share link's prefix visually consistent with the
+// sidebar label users already recognise ("eks", "local-kubeconfigs", …).
 const resolveClusterShareInfoInjectable = getInjectable({
   id: "url-navigation-and-sharing-resolve-cluster-share-info",
 
   instantiate: (di): ResolveClusterShareInfo => {
     const requestChannelRequesterFor = di.inject(requestChannelRequesterForInjectionToken);
     const getClusterServer = requestChannelRequesterFor(getClusterServerChannel);
-    const getPredictableId = di.inject(getPredictableIdInjectionToken);
     const clusterSources = di.injectManyWithMeta(clusterSourceInjectionToken);
 
-    const findSourceIdForEntity = (entity: Entity): string | undefined => {
-      for (const { meta, instance } of clusterSources) {
-        const dtos = instance.clusters.get();
+    const navigatorSlugFor = (entity: Entity): string => {
+      const parentId = entity.metadata.parentId;
 
-        if (!dtos) {
-          continue;
-        }
-
-        const match = dtos.find((dto) => getPredictableId(meta.id, dto.id) === entity.metadata.id);
-
-        if (match) {
-          return meta.id;
-        }
+      if (!parentId) {
+        return directFallbackSlug;
       }
 
-      return undefined;
+      const match = clusterSources.find(({ meta }) => meta.id === parentId);
+
+      return match ? slugifyNavigatorName(match.instance.name) : directFallbackSlug;
     };
 
     return async (entity) => {
@@ -79,13 +71,10 @@ const resolveClusterShareInfoInjectable = getInjectable({
         };
       }
 
-      const sourceId = findSourceIdForEntity(entity);
-      const sourceSlug = sourceId ? normalizeSourceSlug(sourceId) : "direct";
-
       return {
         kind: "ok",
         info: {
-          sourceSlug,
+          sourceSlug: navigatorSlugFor(entity),
           connectionType: "direct",
           clusterSpecifier: getClusterAddressHash(serverUrl),
         },

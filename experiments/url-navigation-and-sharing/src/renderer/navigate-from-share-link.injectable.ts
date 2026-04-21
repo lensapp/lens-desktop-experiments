@@ -1,22 +1,32 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
-import {
-  getClusterAddressHash,
-  getClusterServerChannel,
-  navigateToSharedUrlInjectionToken,
-} from "@lensapp/share-common";
+import { getClusterAddressHash, getClusterServerChannel } from "@lensapp/share-common";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";
 import { entitiesWithKindInjectionToken } from "@lensapp/entity-aggregator";
 import type { Entity } from "@lensapp/entity-aggregator";
 import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import { kubernetesClusterContextKind } from "@lensapp/kubernetes-cluster-context";
+import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
+import {
+  createSelfLinkForKubeResourceInjectionToken,
+  resourceApiBaseForKindInjectionToken,
+} from "@lensapp/kube-resource";
+import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
+import { showKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
+import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
+import { parseKubeApi } from "@lensapp/kube-api";
 import { connectionTypeForSlug } from "./source-slug";
 import type { ParsedShareLink } from "./parse-share-link";
 
-export type ShareLinkNavigationFailure = {
-  readonly kind: "cluster-not-found";
-  readonly sourceSlug: string;
-  readonly clusterSpecifier: string;
-};
+export type ShareLinkNavigationFailure =
+  | {
+      readonly kind: "cluster-not-found";
+      readonly sourceSlug: string;
+      readonly clusterSpecifier: string;
+    }
+  | {
+      readonly kind: "resource-type-not-found";
+      readonly resourcePluralName: string;
+    };
 
 export type NavigateFromShareLink = (parsed: ParsedShareLink) => Promise<ShareLinkNavigationFailure | undefined>;
 
@@ -29,10 +39,12 @@ const clusterEntityRegistration = {
   kind: kubernetesClusterContextKind,
 };
 
-// The share-common navigator returns `Promise<void>` and silently no-ops with
-// only a log line when the cluster specifier doesn't resolve. We pre-walk the
-// cluster entities ourselves so we can surface a visible error to the user
-// before falling through to the same navigator pod-share uses.
+// Matches the share-common navigator's cluster-resolution logic but runs it
+// up-front so we can surface a visible "not found" error to the user instead
+// of letting `navigateToSharedUrl` silently no-op. Once the cluster is known
+// we bypass that navigator entirely and drive tab + namespace + details
+// ourselves — it only opens a tab and relies on URL parameters the renderer
+// doesn't reliably read here, so we'd lose the detail panel otherwise.
 const navigateFromShareLinkInjectable = getInjectable({
   id: "url-navigation-and-sharing-navigate-from-share-link",
 
@@ -66,8 +78,15 @@ const navigateFromShareLinkInjectable = getInjectable({
       return undefined;
     };
 
+    const resolveKind = (pluralName: string): KubeResourceKind | undefined => {
+      try {
+        return di.inject(kubeResourceKindByPluralNameInjectionToken.for(pluralName));
+      } catch {
+        return undefined;
+      }
+    };
+
     return async (parsed) => {
-      const navigateToSharedUrl = await di.inject(navigateToSharedUrlInjectionToken);
       const connectionType = connectionTypeForSlug(parsed.sourceSlug);
       const targetEntity = await findTargetEntity(connectionType, parsed.clusterSpecifier);
 
@@ -79,9 +98,44 @@ const navigateFromShareLinkInjectable = getInjectable({
         };
       }
 
-      const tail = parsed.resourcePluralName ? `/${parsed.resourcePluralName}` : "";
+      const clusterId = targetEntity.metadata.id;
 
-      await navigateToSharedUrl(connectionType, parsed.clusterSpecifier, {}, tail);
+      if (!parsed.resourcePluralName) {
+        return undefined;
+      }
+
+      const kind = resolveKind(parsed.resourcePluralName);
+
+      if (!kind) {
+        return { kind: "resource-type-not-found", resourcePluralName: parsed.resourcePluralName };
+      }
+
+      const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), clusterId);
+      const tabId = await showTab();
+
+      if (parsed.namespace) {
+        const selectNamespaces = await di.inject(selectNamespacesInjectionToken, { clusterId, tabId });
+
+        selectNamespaces([parsed.namespace]);
+      }
+
+      if (parsed.resourceName) {
+        const createSelfLink = di.inject(createSelfLinkForKubeResourceInjectionToken.for(kind));
+        const apiBase = di.inject(resourceApiBaseForKindInjectionToken.for(kind));
+        const parsedApi = parseKubeApi(apiBase);
+
+        if (parsedApi) {
+          const selfLink = createSelfLink({
+            apiVersion: parsedApi.apiVersionWithGroup,
+            name: parsed.resourceName,
+            namespace: parsed.namespace,
+          });
+
+          const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);
+
+          showDetails({ clusterId, selfLink });
+        }
+      }
 
       return undefined;
     };

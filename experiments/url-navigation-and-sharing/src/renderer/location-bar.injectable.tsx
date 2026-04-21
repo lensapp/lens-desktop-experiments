@@ -26,7 +26,10 @@ import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
 } from "./navigate-from-location-input.injectable";
-import { navigateFromShareLinkInjectionToken } from "./navigate-from-share-link.injectable";
+import {
+  type ShareLinkNavigationFailure,
+  navigateFromShareLinkInjectionToken,
+} from "./navigate-from-share-link.injectable";
 import { resolveClusterShareInfoInjectionToken } from "./cluster-share-info.injectable";
 import { openShareMenuInjectionToken } from "./open-share-menu.injectable";
 
@@ -40,6 +43,15 @@ const failureMessage = (failure: NavigationFailure): string => {
   switch (failure.kind) {
     case "cluster-not-found":
       return `Cluster "${failure.clusterName}" not found`;
+    case "resource-type-not-found":
+      return `Resource type "${failure.resourcePluralName}" not found`;
+  }
+};
+
+const shareLinkFailureMessage = (failure: ShareLinkNavigationFailure): string => {
+  switch (failure.kind) {
+    case "cluster-not-found":
+      return `Cluster from "${failure.sourceSlug}" link not found in this Lens`;
     case "resource-type-not-found":
       return `Resource type "${failure.resourcePluralName}" not found`;
   }
@@ -158,21 +170,6 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onSubmit, value],
   );
 
-  // Pasted share links submit immediately: the user isn't authoring a path,
-  // they're handing off a portable identifier and expect instant navigation.
-  const handlePaste = useCallback(
-    (event: React.ClipboardEvent<HTMLInputElement>) => {
-      const pasted = event.clipboardData.getData("text");
-
-      if (isShareLink(pasted)) {
-        event.preventDefault();
-        setValue(pasted);
-        onSubmit(pasted);
-      }
-    },
-    [onSubmit],
-  );
-
   return (
     <Form
       onSubmit={handleSubmit}
@@ -186,7 +183,6 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
         aria-label="Location input"
         aria-invalid={errorMessage !== undefined}
         $style={{
@@ -241,7 +237,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
         const failure = await navigateFromShareLink(parsed);
 
         if (failure) {
-          setErrorMessage(`Cluster from "${failure.sourceSlug}" link not found in this Lens`);
+          setErrorMessage(shareLinkFailureMessage(failure));
           return;
         }
 
