@@ -78,4 +78,40 @@ describe("getActiveSegment", () => {
 
     expect(getActiveSegment(input, 999)).toEqual({ index: 0, rangeStart: 0, rangeEnd: 7, text: "cluster" });
   });
+
+  describe("with a known cluster name containing slashes", () => {
+    const arnClusterName = "arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1";
+
+    it("treats the entire ARN as segment 0 when the caret is inside it", () => {
+      const result = getActiveSegment(arnClusterName, arnClusterName.length, [arnClusterName]);
+
+      expect(result).toEqual({
+        index: 0,
+        rangeStart: 0,
+        rangeEnd: arnClusterName.length,
+        text: arnClusterName,
+      });
+    });
+
+    it("reports segment 1 after the ARN plus trailing slash", () => {
+      const input = `${arnClusterName}/default`;
+      const result = getActiveSegment(input, input.length, [arnClusterName]);
+
+      expect(result).toMatchObject({ index: 1, text: "default" });
+    });
+
+    it("reports segment 2 for the resource plural after the ARN cluster name", () => {
+      const input = `${arnClusterName}/default/pods`;
+      const result = getActiveSegment(input, input.length, [arnClusterName]);
+
+      expect(result).toMatchObject({ index: 2, text: "pods" });
+    });
+
+    it("uses naive splitting when the input does not match any known cluster", () => {
+      const input = `${arnClusterName}/default`;
+      const result = getActiveSegment(input, input.length, ["unrelated-cluster"]);
+
+      expect(result).toMatchObject({ index: 2, text: "default" });
+    });
+  });
 });

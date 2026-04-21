@@ -5,7 +5,48 @@ export type ParsedLocationBarInput = {
   readonly resourceName: string | undefined;
 };
 
-export const parseLocationBarInput = (input: string): ParsedLocationBarInput | undefined => {
+/**
+ * EKS-style cluster names can contain `/` (e.g.
+ * `arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1`). Naive `/`-splitting
+ * then treats the ARN suffix as a namespace. When we know the registered
+ * cluster names, try longest-prefix match first so the cluster name is kept
+ * intact no matter how many `/`s it contains.
+ */
+const matchKnownClusterPrefix = (input: string, knownClusterNames: readonly string[]): string | undefined => {
+  const candidates = knownClusterNames
+    .filter((name) => input === name || input.startsWith(`${name}/`))
+    .sort((a, b) => b.length - a.length);
+
+  return candidates[0];
+};
+
+export const parseLocationBarInput = (
+  input: string,
+  knownClusterNames: readonly string[] = [],
+): ParsedLocationBarInput | undefined => {
+  const normalized = input.trim().replace(/^\/+/, "").replace(/\/+$/, "");
+
+  if (normalized.length === 0) {
+    return undefined;
+  }
+
+  const matchedCluster = matchKnownClusterPrefix(normalized, knownClusterNames);
+
+  if (matchedCluster) {
+    const remainder = normalized.slice(matchedCluster.length).replace(/^\/+/, "");
+    const [namespace, resourcePluralName, resourceName] = remainder
+      .split("/")
+      .map((segment) => segment.trim())
+      .filter((segment) => segment.length > 0);
+
+    return {
+      clusterName: matchedCluster,
+      namespace,
+      resourcePluralName,
+      resourceName,
+    };
+  }
+
   const segments = input
     .split("/")
     .map((segment) => segment.trim())

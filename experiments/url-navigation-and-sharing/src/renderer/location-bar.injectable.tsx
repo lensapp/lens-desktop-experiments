@@ -372,8 +372,9 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
   const [resourceNameSuggestions, setResourceNameSuggestions] = useState<readonly Suggestion[]>([]);
   const [suppressDropdown, setSuppressDropdown] = useState(false);
 
-  const activeSegment = getActiveSegment(value, caret);
-  const parsed = parseLocationBarInput(value);
+  const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
+  const activeSegment = getActiveSegment(value, caret, clusterNames);
+  const parsed = parseLocationBarInput(value, clusterNames);
   const resolvedClusterId = parsed
     ? clusters.find((candidate) => candidate.name === parsed.clusterName)?.id
     : undefined;
@@ -382,7 +383,6 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
     [parsed?.resourcePluralName, resolveKindOrUndefined],
   );
   const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
-  const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
 
   const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
     if (suppressDropdown) {
@@ -535,19 +535,9 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
   const handleSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-
-      if (dropdownIsOpen) {
-        const pickable = activeSuggestions[activeIndex];
-
-        if (pickable) {
-          acceptSuggestion(pickable);
-          return;
-        }
-      }
-
       onSubmit(value);
     },
-    [dropdownIsOpen, activeSuggestions, activeIndex, acceptSuggestion, onSubmit, value],
+    [onSubmit, value],
   );
 
   const activeDescendantId = dropdownIsOpen ? `${listboxId}-option-${activeIndex}` : undefined;
@@ -636,6 +626,8 @@ type EditableLocationBarProps = {
 const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
+  const clusters = useSyncInject(clustersInjectionToken).get();
+  const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -671,7 +663,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
         return;
       }
 
-      const parsed = parseLocationBarInput(value);
+      const parsed = parseLocationBarInput(value, clusterNames);
 
       if (!parsed) {
         setErrorMessage("Enter a path like cluster/namespace/pods");
@@ -688,7 +680,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
       setIsEditing(false);
       setErrorMessage(undefined);
     },
-    [navigate, navigateFromShareLink],
+    [navigate, navigateFromShareLink, clusterNames],
   );
 
   if (isEditing) {
