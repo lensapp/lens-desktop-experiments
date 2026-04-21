@@ -1,0 +1,57 @@
+export type ParsedShareLink = {
+  readonly sourceSlug: string;
+  readonly clusterSpecifier: string;
+  readonly namespace: string | undefined;
+  readonly resourcePluralName: string | undefined;
+  readonly resourceName: string | undefined;
+};
+
+// Matches `<slug>:` at the very start of the (trimmed) input. The slug must
+// begin with a letter and may contain letters, digits, and hyphens. Requiring
+// a letter avoids false positives on things like `:pods`.
+const shareLinkPrefixRegex = /^[a-z][a-z0-9-]*:/i;
+
+export const isShareLink = (input: string): boolean => shareLinkPrefixRegex.test(input.trimStart());
+
+export const parseShareLink = (input: string): ParsedShareLink | undefined => {
+  const trimmed = input.trim();
+
+  if (!isShareLink(trimmed)) {
+    return undefined;
+  }
+
+  const colonIndex = trimmed.indexOf(":");
+  const sourceSlug = trimmed.slice(0, colonIndex);
+  const rest = trimmed.slice(colonIndex + 1).replace(/\/+$/, "");
+
+  // Reject leading slashes: `slug:/foo` or `lens://...` both imply a missing
+  // specifier. We bail rather than silently shifting segments, otherwise
+  // `lens://app/...` would parse as if `app` were the cluster specifier.
+  if (rest.length === 0 || rest.startsWith("/")) {
+    return undefined;
+  }
+
+  const [clusterSpecifier, namespace, resourcePluralName, resourceName] = rest
+    .split("/")
+    .map((segment) => segment.trim());
+
+  if (!sourceSlug || !clusterSpecifier) {
+    return undefined;
+  }
+
+  return {
+    sourceSlug,
+    clusterSpecifier,
+    namespace: namespace || undefined,
+    resourcePluralName: resourcePluralName || undefined,
+    resourceName: resourceName || undefined,
+  };
+};
+
+export const formatShareLink = (parsed: ParsedShareLink): string => {
+  const path = [parsed.clusterSpecifier, parsed.namespace, parsed.resourcePluralName, parsed.resourceName]
+    .filter((segment): segment is string => Boolean(segment))
+    .join("/");
+
+  return `${parsed.sourceSlug}:${path}`;
+};

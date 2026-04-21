@@ -10,20 +10,34 @@ import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
 import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
-import { ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
+import { getCustomProtocolUrl } from "@lensapp/share-common";
+import { Button, ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
+import { copyToClipboardInjectionToken } from "@lensapp/electron";
+import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
+import { isMacInjectable } from "@lensapp/vars";
+import type { Entity } from "@lensapp/entity-aggregator";
 import { observer } from "mobx-react";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
+import { formatShareLink, isShareLink, parseShareLink } from "./parse-share-link";
 import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
 } from "./navigate-from-location-input.injectable";
+import {
+  type ShareLinkNavigationFailure,
+  navigateFromShareLinkInjectionToken,
+} from "./navigate-from-share-link.injectable";
+import { resolveClusterShareInfoInjectionToken } from "./cluster-share-info.injectable";
+import { openShareMenuInjectionToken } from "./open-share-menu.injectable";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
 const defaultNonClusterLabel = "Lens";
+const kubeDetailsUrlParamName = "kube-details";
+const allNamespacesSelectedValue = "*";
 
 const failureMessage = (failure: NavigationFailure): string => {
   switch (failure.kind) {
@@ -32,6 +46,35 @@ const failureMessage = (failure: NavigationFailure): string => {
     case "resource-type-not-found":
       return `Resource type "${failure.resourcePluralName}" not found`;
   }
+};
+
+const shareLinkFailureMessage = (failure: ShareLinkNavigationFailure): string => {
+  switch (failure.kind) {
+    case "cluster-not-found":
+      return `Cluster from "${failure.sourceSlug}" link not found in this Lens`;
+    case "resource-type-not-found":
+      return `Resource type "${failure.resourcePluralName}" not found`;
+  }
+};
+
+const pluralNameFromResourcePath = (path: string | undefined): string | undefined => {
+  if (!path) {
+    return undefined;
+  }
+
+  const segments = path.split("/").filter(Boolean);
+
+  return segments[segments.length - 1];
+};
+
+const singleNamespaceOrUndefined = (namespaces: readonly string[] | undefined): string | undefined => {
+  if (!namespaces || namespaces.length !== 1) {
+    return undefined;
+  }
+
+  const [only] = namespaces;
+
+  return only === allNamespacesSelectedValue ? undefined : only;
 };
 
 type LocationBarViewProps = {
@@ -106,9 +149,6 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onCancel],
   );
 
-  // Only cancel when focus leaves the form entirely — otherwise clicking the
-  // inline error message (or any future in-form control) would tear down the
-  // input mid-interaction.
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLFormElement>) => {
       const nextFocus = event.relatedTarget as Node | null;
@@ -170,6 +210,7 @@ type EditableLocationBarProps = {
 
 const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
+  const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -185,6 +226,26 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
 
   const submitEdit = useCallback(
     async (value: string) => {
+      if (isShareLink(value)) {
+        const parsed = parseShareLink(value);
+
+        if (!parsed) {
+          setErrorMessage("Malformed share link");
+          return;
+        }
+
+        const failure = await navigateFromShareLink(parsed);
+
+        if (failure) {
+          setErrorMessage(shareLinkFailureMessage(failure));
+          return;
+        }
+
+        setIsEditing(false);
+        setErrorMessage(undefined);
+        return;
+      }
+
       const parsed = parseLocationBarInput(value);
 
       if (!parsed) {
@@ -202,7 +263,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
       setIsEditing(false);
       setErrorMessage(undefined);
     },
-    [navigate],
+    [navigate, navigateFromShareLink],
   );
 
   if (isEditing) {
@@ -219,31 +280,167 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   return <LocationBarView segments={segments} onEditRequested={enterEditMode} />;
 };
 
+type ClusterToolbarActionsProps = {
+  readonly entity: Entity;
+  readonly resourcePluralName: string | undefined;
+  readonly namespace: string | undefined;
+  readonly resourceName: string | undefined;
+  readonly resourceSelfLink: string | undefined;
+};
+
+const copyStatusResetMs = 1500;
+
+const ClusterToolbarActions = ({
+  entity,
+  resourcePluralName,
+  namespace,
+  resourceName,
+  resourceSelfLink,
+}: ClusterToolbarActionsProps) => {
+  const resolveClusterShareInfo = useSyncInject(resolveClusterShareInfoInjectionToken);
+  const openShareMenu = useSyncInject(openShareMenuInjectionToken);
+  const copyToClipboard = useSyncInject(copyToClipboardInjectionToken);
+  const showErrorNotification = useSyncInject(showErrorNotificationInjectionToken);
+  const isMac = useSyncInject(isMacInjectable);
+  const [status, setStatus] = useState<"idle" | "copied">("idle");
+
+  useEffect(() => {
+    if (status !== "copied") {
+      return;
+    }
+
+    const handle = setTimeout(() => setStatus("idle"), copyStatusResetMs);
+
+    return () => clearTimeout(handle);
+  }, [status]);
+
+  const handleCopy = useCallback(async () => {
+    const result = await resolveClusterShareInfo(entity);
+
+    if (result.kind === "error") {
+      showErrorNotification(result.message);
+      return;
+    }
+
+    const text = formatShareLink({
+      sourceSlug: result.info.sourceSlug,
+      clusterSpecifier: result.info.clusterSpecifier,
+      namespace,
+      resourcePluralName,
+      resourceName,
+    });
+
+    copyToClipboard(text);
+    setStatus("copied");
+  }, [
+    resolveClusterShareInfo,
+    entity,
+    namespace,
+    resourcePluralName,
+    resourceName,
+    copyToClipboard,
+    showErrorNotification,
+  ]);
+
+  const handleShare = useCallback(async () => {
+    const result = await resolveClusterShareInfo(entity);
+
+    if (result.kind === "error") {
+      showErrorNotification(result.message);
+      return;
+    }
+
+    const tail = resourcePluralName ? `/${resourcePluralName}` : "";
+    const query: Record<string, string> = {};
+
+    if (resourceSelfLink) {
+      query[kubeDetailsUrlParamName] = resourceSelfLink;
+    }
+
+    const url = getCustomProtocolUrl({
+      connectionType: result.info.connectionType,
+      clusterSpecifier: result.info.clusterSpecifier,
+      frame: "cluster",
+      query,
+      tail,
+    });
+
+    openShareMenu(url);
+  }, [resolveClusterShareInfo, entity, resourcePluralName, resourceSelfLink, openShareMenu, showErrorNotification]);
+
+  const copyLabel = status === "copied" ? "Copied" : "Copy";
+
+  return (
+    <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }} $padding={{ horizontal: "xs" }}>
+      <Button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copy share link"
+        title="Copy a link that can be pasted into another Lens Desktop"
+        $padding={{ horizontal: "s", vertical: "xxs" }}
+        $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+      >
+        {copyLabel}
+      </Button>
+      {isMac && (
+        <Button
+          type="button"
+          onClick={handleShare}
+          aria-label="Share via system share sheet"
+          title="Share a lens:// link externally"
+          $padding={{ horizontal: "s", vertical: "xxs" }}
+          $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+        >
+          Share
+        </Button>
+      )}
+    </Div>
+  );
+};
+
 type ClusterBreadcrumbProps = {
   readonly tabId: string;
   readonly clusterId: string;
-  readonly fallbackClusterName: string;
+  readonly entity: Entity;
   readonly resourcePath: string;
 };
 
-const ClusterBreadcrumb = observer(
-  ({ tabId, clusterId, fallbackClusterName, resourcePath }: ClusterBreadcrumbProps) => {
-    const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
-    const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
-      .get()
-      ?.get();
-    const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
+const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: ClusterBreadcrumbProps) => {
+  const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
+  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+    .get()
+    ?.get();
+  const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
 
-    const segments = synthesizeClusterBreadcrumb({
-      clusterName: displayName ?? fallbackClusterName,
-      namespaces,
-      resourcePath,
-      resourceName: kubeObject?.metadata.name,
-    });
+  const segments = synthesizeClusterBreadcrumb({
+    clusterName: displayName ?? entity.metadata.name,
+    namespaces,
+    resourcePath,
+    resourceName: kubeObject?.metadata.name,
+  });
 
-    return <EditableLocationBar segments={segments} />;
-  },
-);
+  const resourcePluralName = pluralNameFromResourcePath(resourcePath);
+  const namespace = singleNamespaceOrUndefined(namespaces);
+
+  return (
+    <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
+      <Div
+        $flex={{ direction: "horizontal", verticalAlign: "center" }}
+        $overflow="hidden"
+        $style={{ minWidth: 0, flex: 1 }}
+      >
+        <EditableLocationBar segments={segments} />
+      </Div>
+      <ClusterToolbarActions
+        entity={entity}
+        resourcePluralName={resourcePluralName}
+        namespace={namespace}
+        resourceName={kubeObject?.metadata.name}
+        resourceSelfLink={kubeObject?.metadata.selfLink}
+      />
+    </Div>
+  );
+});
 
 const LocationBar = observer(() => {
   const activeClusterEntity = useSyncInject(activeClusterEntityForSelectedTabInjectionToken).get();
@@ -260,7 +457,7 @@ const LocationBar = observer(() => {
     <ClusterBreadcrumb
       tabId={selectedClusterTab.tabId}
       clusterId={selectedClusterTab.clusterId}
-      fallbackClusterName={activeClusterEntity.metadata.name}
+      entity={activeClusterEntity}
       resourcePath={selectedClusterTab.kubeResource}
     />
   );
