@@ -10,20 +10,27 @@ import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
 import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
-import { ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
+import { getCustomProtocolUrl } from "@lensapp/share-common";
+import { Button, ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
 import { observer } from "mobx-react";
 import React, { useCallback, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
+import { formatShareLink, isShareLink, parseShareLink } from "./parse-share-link";
 import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
 } from "./navigate-from-location-input.injectable";
+import { navigateFromShareLinkInjectionToken } from "./navigate-from-share-link.injectable";
+import { resolveClusterShareInfoInjectionToken } from "./cluster-share-info.injectable";
+import { openShareMenuInjectionToken } from "./open-share-menu.injectable";
 
 const locationBarOrderNumber = 100;
 const segmentSeparator = "/";
 const defaultNonClusterLabel = "Lens";
+const kubeDetailsUrlParamName = "kube-details";
+const allNamespacesSelectedValue = "*";
 
 const failureMessage = (failure: NavigationFailure): string => {
   switch (failure.kind) {
@@ -32,6 +39,26 @@ const failureMessage = (failure: NavigationFailure): string => {
     case "resource-type-not-found":
       return `Resource type "${failure.resourcePluralName}" not found`;
   }
+};
+
+const pluralNameFromResourcePath = (path: string | undefined): string | undefined => {
+  if (!path) {
+    return undefined;
+  }
+
+  const segments = path.split("/").filter(Boolean);
+
+  return segments[segments.length - 1];
+};
+
+const singleNamespaceOrUndefined = (namespaces: readonly string[] | undefined): string | undefined => {
+  if (!namespaces || namespaces.length !== 1) {
+    return undefined;
+  }
+
+  const [only] = namespaces;
+
+  return only === allNamespacesSelectedValue ? undefined : only;
 };
 
 type LocationBarViewProps = {
@@ -106,9 +133,6 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onCancel],
   );
 
-  // Only cancel when focus leaves the form entirely — otherwise clicking the
-  // inline error message (or any future in-form control) would tear down the
-  // input mid-interaction.
   const handleBlur = useCallback(
     (event: React.FocusEvent<HTMLFormElement>) => {
       const nextFocus = event.relatedTarget as Node | null;
@@ -130,6 +154,21 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
     [onSubmit, value],
   );
 
+  // Pasted share links submit immediately: the user isn't authoring a path,
+  // they're handing off a portable identifier and expect instant navigation.
+  const handlePaste = useCallback(
+    (event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = event.clipboardData.getData("text");
+
+      if (isShareLink(pasted)) {
+        event.preventDefault();
+        setValue(pasted);
+        onSubmit(pasted);
+      }
+    },
+    [onSubmit],
+  );
+
   return (
     <Form
       onSubmit={handleSubmit}
@@ -143,6 +182,7 @@ const LocationBarInput = ({ initialValue, errorMessage, onSubmit, onCancel }: Lo
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         aria-label="Location input"
         aria-invalid={errorMessage !== undefined}
         $style={{
@@ -170,6 +210,7 @@ type EditableLocationBarProps = {
 
 const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
+  const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -185,6 +226,20 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
 
   const submitEdit = useCallback(
     async (value: string) => {
+      if (isShareLink(value)) {
+        const parsed = parseShareLink(value);
+
+        if (!parsed) {
+          setErrorMessage("Malformed share link");
+          return;
+        }
+
+        await navigateFromShareLink(parsed);
+        setIsEditing(false);
+        setErrorMessage(undefined);
+        return;
+      }
+
       const parsed = parseLocationBarInput(value);
 
       if (!parsed) {
@@ -202,7 +257,7 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
       setIsEditing(false);
       setErrorMessage(undefined);
     },
-    [navigate],
+    [navigate, navigateFromShareLink],
   );
 
   if (isEditing) {
@@ -217,6 +272,105 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
   }
 
   return <LocationBarView segments={segments} onEditRequested={enterEditMode} />;
+};
+
+type ClusterToolbarActionsProps = {
+  readonly clusterId: string;
+  readonly resourcePluralName: string | undefined;
+  readonly namespace: string | undefined;
+  readonly resourceName: string | undefined;
+  readonly resourceSelfLink: string | undefined;
+};
+
+const ClusterToolbarActions = ({
+  clusterId,
+  resourcePluralName,
+  namespace,
+  resourceName,
+  resourceSelfLink,
+}: ClusterToolbarActionsProps) => {
+  const resolveClusterShareInfo = useSyncInject(resolveClusterShareInfoInjectionToken);
+  const openShareMenu = useSyncInject(openShareMenuInjectionToken);
+  const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
+
+  const handleCopy = useCallback(async () => {
+    const info = await resolveClusterShareInfo(clusterId);
+
+    if (!info) {
+      setStatus("error");
+      return;
+    }
+
+    const text = formatShareLink({
+      sourceSlug: info.sourceSlug,
+      clusterSpecifier: info.clusterSpecifier,
+      namespace,
+      resourcePluralName,
+      resourceName,
+    });
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus("copied");
+      // Revert to idle after a beat so the user can invoke it again.
+      setTimeout(() => setStatus("idle"), 1500);
+    } catch {
+      setStatus("error");
+    }
+  }, [resolveClusterShareInfo, clusterId, namespace, resourcePluralName, resourceName]);
+
+  const handleShare = useCallback(async () => {
+    const info = await resolveClusterShareInfo(clusterId);
+
+    if (!info) {
+      setStatus("error");
+      return;
+    }
+
+    const tail = resourcePluralName ? `/${resourcePluralName}` : "";
+    const query: Record<string, string> = {};
+
+    if (resourceSelfLink) {
+      query[kubeDetailsUrlParamName] = resourceSelfLink;
+    }
+
+    const url = getCustomProtocolUrl({
+      connectionType: info.connectionType,
+      clusterSpecifier: info.clusterSpecifier,
+      frame: "cluster",
+      query,
+      tail,
+    });
+
+    openShareMenu(url);
+  }, [resolveClusterShareInfo, clusterId, resourcePluralName, resourceSelfLink, openShareMenu]);
+
+  const copyLabel = status === "copied" ? "Copied" : status === "error" ? "Error" : "Copy";
+
+  return (
+    <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }} $padding={{ horizontal: "xs" }}>
+      <Button
+        type="button"
+        onClick={handleCopy}
+        aria-label="Copy share link"
+        title="Copy a link that can be pasted into another Lens Desktop"
+        $padding={{ horizontal: "s", vertical: "xxs" }}
+        $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+      >
+        {copyLabel}
+      </Button>
+      <Button
+        type="button"
+        onClick={handleShare}
+        aria-label="Share via system share sheet"
+        title="Share a lens:// link externally"
+        $padding={{ horizontal: "s", vertical: "xxs" }}
+        $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+      >
+        Share
+      </Button>
+    </Div>
+  );
 };
 
 type ClusterBreadcrumbProps = {
@@ -241,7 +395,27 @@ const ClusterBreadcrumb = observer(
       resourceName: kubeObject?.metadata.name,
     });
 
-    return <EditableLocationBar segments={segments} />;
+    const resourcePluralName = pluralNameFromResourcePath(resourcePath);
+    const namespace = singleNamespaceOrUndefined(namespaces);
+
+    return (
+      <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
+        <Div
+          $flex={{ direction: "horizontal", verticalAlign: "center" }}
+          $overflow="hidden"
+          $style={{ minWidth: 0, flex: 1 }}
+        >
+          <EditableLocationBar segments={segments} />
+        </Div>
+        <ClusterToolbarActions
+          clusterId={clusterId}
+          resourcePluralName={resourcePluralName}
+          namespace={namespace}
+          resourceName={kubeObject?.metadata.name}
+          resourceSelfLink={kubeObject?.metadata.selfLink}
+        />
+      </Div>
+    );
   },
 );
 
