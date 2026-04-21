@@ -1,12 +1,13 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
-import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
+import type { KubeResourceKind } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
 import { hideKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
 import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
 import { tabTypeForLabel } from "./label-for-tab-type";
+import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
 
 export type NavigationFailure =
   | { readonly kind: "cluster-not-found"; readonly clusterName: string }
@@ -24,6 +25,7 @@ const navigateFromLocationInputInjectable = getInjectable({
   instantiate:
     (di): NavigateFromLocationInput =>
     async (input) => {
+      const resolveKindOrUndefined = di.inject(resolveKubeResourceKindOrUndefinedInjectionToken);
       const isJustFirstSegment =
         input.namespace === undefined && input.resourcePluralName === undefined && input.resourceName === undefined;
 
@@ -46,8 +48,8 @@ const navigateFromLocationInputInjectable = getInjectable({
         }
       }
 
-      const clusters = di.inject(clustersInjectionToken).get();
-      const cluster = clusters.find((candidate) => candidate.name === input.clusterName);
+      const clusters = di.inject(clustersInjectionToken);
+      const cluster = clusters.get().find((candidate) => candidate.name === input.clusterName);
 
       if (!cluster) {
         return { kind: "cluster-not-found", clusterName: input.clusterName };
@@ -55,22 +57,20 @@ const navigateFromLocationInputInjectable = getInjectable({
 
       const kindByPlural = new Map<string, KubeResourceKind>();
 
-      // TODO: replace with a `kubeResourceKindByPluralNameOrUndefinedInjectionToken`
-      // once contributed upstream. Until then, exceptions-as-existence-probe is the
-      // only way to ask `@lensapp/kube-resource` "is this plural registered?", and
-      // it risks swallowing genuine instantiate errors. Blocked on an additive
-      // monorepo PR — see .knowledge/rules.md §2.
       const canResolvePlural = (pluralName: string): boolean => {
         if (kindByPlural.has(pluralName)) {
           return true;
         }
 
-        try {
-          kindByPlural.set(pluralName, di.inject(kubeResourceKindByPluralNameInjectionToken.for(pluralName)));
-          return true;
-        } catch {
+        const kind = resolveKindOrUndefined(pluralName);
+
+        if (!kind) {
           return false;
         }
+
+        kindByPlural.set(pluralName, kind);
+
+        return true;
       };
 
       const resolved = resolveLocationSegments(input, canResolvePlural);

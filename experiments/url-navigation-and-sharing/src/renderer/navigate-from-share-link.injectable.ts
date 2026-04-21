@@ -5,7 +5,6 @@ import { entitiesWithKindInjectionToken } from "@lensapp/entity-aggregator";
 import type { Entity } from "@lensapp/entity-aggregator";
 import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import { kubernetesClusterContextKind } from "@lensapp/kubernetes-cluster-context";
-import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
 import {
   createSelfLinkForKubeResourceInjectionToken,
   resourceApiBaseForKindInjectionToken,
@@ -19,6 +18,7 @@ import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { parseKubeApi } from "@lensapp/kube-api";
 import { connectionTypeForSlug } from "./source-slug";
 import type { ParsedShareLink } from "./parse-share-link";
+import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
 
 export type ShareLinkNavigationFailure =
   | {
@@ -55,6 +55,7 @@ const navigateFromShareLinkInjectable = getInjectable({
     const requestChannelRequesterFor = di.inject(requestChannelRequesterForInjectionToken);
     const getClusterServer = requestChannelRequesterFor(getClusterServerChannel);
     const clusterEntities = di.inject(entitiesWithKindInjectionToken, clusterEntityRegistration);
+    const resolveKindOrUndefined = di.inject(resolveKubeResourceKindOrUndefinedInjectionToken);
 
     const findTargetEntity = async (
       connectionType: "direct" | "teamwork",
@@ -81,14 +82,6 @@ const navigateFromShareLinkInjectable = getInjectable({
       return undefined;
     };
 
-    const resolveKind = (pluralName: string): KubeResourceKind | undefined => {
-      try {
-        return di.inject(kubeResourceKindByPluralNameInjectionToken.for(pluralName));
-      } catch {
-        return undefined;
-      }
-    };
-
     return async (parsed) => {
       const connectionType = connectionTypeForSlug(parsed.sourceSlug);
       const targetEntity = await findTargetEntity(connectionType, parsed.clusterSpecifier);
@@ -107,7 +100,7 @@ const navigateFromShareLinkInjectable = getInjectable({
         return undefined;
       }
 
-      const kind = resolveKind(parsed.resourcePluralName);
+      const kind = resolveKindOrUndefined(parsed.resourcePluralName);
 
       if (!kind) {
         return { kind: "resource-type-not-found", resourcePluralName: parsed.resourcePluralName };
