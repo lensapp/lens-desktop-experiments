@@ -13,6 +13,10 @@ import { elementComponentFeature } from "@lensapp/element-components";
 import { lensShareRendererFeature } from "@lensapp/share-renderer";
 import { messagingFeature } from "@lensapp/messaging";
 import { utilityFeature } from "@lensapp/utility-feature";
+import { electronFeature } from "@lensapp/electron";
+import { notificationsFeature } from "@lensapp/notifications";
+import { varsFeature } from "@lensapp/vars";
+import { lensSpacesFeature } from "@lensapp/lens-spaces";
 
 export const urlNavigationAndSharingRendererFeature = getFeature({
   id: "url-navigation-and-sharing-renderer",
@@ -31,5 +35,9 @@ export const urlNavigationAndSharingRendererFeature = getFeature({
     lensShareRendererFeature,
     messagingFeature,
     utilityFeature,
+    electronFeature,
+    notificationsFeature,
+    varsFeature,
+    lensSpacesFeature,
   ],
 });

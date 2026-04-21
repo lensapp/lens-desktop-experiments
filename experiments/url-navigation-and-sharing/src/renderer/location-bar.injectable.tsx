@@ -12,6 +12,10 @@ import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/ku
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { getCustomProtocolUrl } from "@lensapp/share-common";
 import { Button, ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
+import { copyToClipboardInjectionToken } from "@lensapp/electron";
+import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
+import { isMacInjectable } from "@lensapp/vars";
+import type { Entity } from "@lensapp/entity-aggregator";
 import { observer } from "mobx-react";
 import React, { useCallback, useState } from "react";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
@@ -275,15 +279,17 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
 };
 
 type ClusterToolbarActionsProps = {
-  readonly clusterId: string;
+  readonly entity: Entity;
   readonly resourcePluralName: string | undefined;
   readonly namespace: string | undefined;
   readonly resourceName: string | undefined;
   readonly resourceSelfLink: string | undefined;
 };
 
+const copyStatusResetMs = 1500;
+
 const ClusterToolbarActions = ({
-  clusterId,
+  entity,
   resourcePluralName,
   namespace,
   resourceName,
@@ -291,39 +297,45 @@ const ClusterToolbarActions = ({
 }: ClusterToolbarActionsProps) => {
   const resolveClusterShareInfo = useSyncInject(resolveClusterShareInfoInjectionToken);
   const openShareMenu = useSyncInject(openShareMenuInjectionToken);
-  const [status, setStatus] = useState<"idle" | "copied" | "error">("idle");
+  const copyToClipboard = useSyncInject(copyToClipboardInjectionToken);
+  const showErrorNotification = useSyncInject(showErrorNotificationInjectionToken);
+  const isMac = useSyncInject(isMacInjectable);
+  const [status, setStatus] = useState<"idle" | "copied">("idle");
 
   const handleCopy = useCallback(async () => {
-    const info = await resolveClusterShareInfo(clusterId);
+    const result = await resolveClusterShareInfo(entity);
 
-    if (!info) {
-      setStatus("error");
+    if (result.kind === "error") {
+      showErrorNotification(result.message);
       return;
     }
 
     const text = formatShareLink({
-      sourceSlug: info.sourceSlug,
-      clusterSpecifier: info.clusterSpecifier,
+      sourceSlug: result.info.sourceSlug,
+      clusterSpecifier: result.info.clusterSpecifier,
       namespace,
       resourcePluralName,
       resourceName,
     });
 
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus("copied");
-      // Revert to idle after a beat so the user can invoke it again.
-      setTimeout(() => setStatus("idle"), 1500);
-    } catch {
-      setStatus("error");
-    }
-  }, [resolveClusterShareInfo, clusterId, namespace, resourcePluralName, resourceName]);
+    copyToClipboard(text);
+    setStatus("copied");
+    setTimeout(() => setStatus("idle"), copyStatusResetMs);
+  }, [
+    resolveClusterShareInfo,
+    entity,
+    namespace,
+    resourcePluralName,
+    resourceName,
+    copyToClipboard,
+    showErrorNotification,
+  ]);
 
   const handleShare = useCallback(async () => {
-    const info = await resolveClusterShareInfo(clusterId);
+    const result = await resolveClusterShareInfo(entity);
 
-    if (!info) {
-      setStatus("error");
+    if (result.kind === "error") {
+      showErrorNotification(result.message);
       return;
     }
 
@@ -335,17 +347,17 @@ const ClusterToolbarActions = ({
     }
 
     const url = getCustomProtocolUrl({
-      connectionType: info.connectionType,
-      clusterSpecifier: info.clusterSpecifier,
+      connectionType: result.info.connectionType,
+      clusterSpecifier: result.info.clusterSpecifier,
       frame: "cluster",
       query,
       tail,
     });
 
     openShareMenu(url);
-  }, [resolveClusterShareInfo, clusterId, resourcePluralName, resourceSelfLink, openShareMenu]);
+  }, [resolveClusterShareInfo, entity, resourcePluralName, resourceSelfLink, openShareMenu, showErrorNotification]);
 
-  const copyLabel = status === "copied" ? "Copied" : status === "error" ? "Error" : "Copy";
+  const copyLabel = status === "copied" ? "Copied" : "Copy";
 
   return (
     <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }} $padding={{ horizontal: "xs" }}>
@@ -359,16 +371,18 @@ const ClusterToolbarActions = ({
       >
         {copyLabel}
       </Button>
-      <Button
-        type="button"
-        onClick={handleShare}
-        aria-label="Share via system share sheet"
-        title="Share a lens:// link externally"
-        $padding={{ horizontal: "s", vertical: "xxs" }}
-        $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
-      >
-        Share
-      </Button>
+      {isMac && (
+        <Button
+          type="button"
+          onClick={handleShare}
+          aria-label="Share via system share sheet"
+          title="Share a lens:// link externally"
+          $padding={{ horizontal: "s", vertical: "xxs" }}
+          $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+        >
+          Share
+        </Button>
+      )}
     </Div>
   );
 };
@@ -376,48 +390,46 @@ const ClusterToolbarActions = ({
 type ClusterBreadcrumbProps = {
   readonly tabId: string;
   readonly clusterId: string;
-  readonly fallbackClusterName: string;
+  readonly entity: Entity;
   readonly resourcePath: string;
 };
 
-const ClusterBreadcrumb = observer(
-  ({ tabId, clusterId, fallbackClusterName, resourcePath }: ClusterBreadcrumbProps) => {
-    const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
-    const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
-      .get()
-      ?.get();
-    const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
+const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: ClusterBreadcrumbProps) => {
+  const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
+  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+    .get()
+    ?.get();
+  const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
 
-    const segments = synthesizeClusterBreadcrumb({
-      clusterName: displayName ?? fallbackClusterName,
-      namespaces,
-      resourcePath,
-      resourceName: kubeObject?.metadata.name,
-    });
+  const segments = synthesizeClusterBreadcrumb({
+    clusterName: displayName ?? entity.metadata.name,
+    namespaces,
+    resourcePath,
+    resourceName: kubeObject?.metadata.name,
+  });
 
-    const resourcePluralName = pluralNameFromResourcePath(resourcePath);
-    const namespace = singleNamespaceOrUndefined(namespaces);
+  const resourcePluralName = pluralNameFromResourcePath(resourcePath);
+  const namespace = singleNamespaceOrUndefined(namespaces);
 
-    return (
-      <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
-        <Div
-          $flex={{ direction: "horizontal", verticalAlign: "center" }}
-          $overflow="hidden"
-          $style={{ minWidth: 0, flex: 1 }}
-        >
-          <EditableLocationBar segments={segments} />
-        </Div>
-        <ClusterToolbarActions
-          clusterId={clusterId}
-          resourcePluralName={resourcePluralName}
-          namespace={namespace}
-          resourceName={kubeObject?.metadata.name}
-          resourceSelfLink={kubeObject?.metadata.selfLink}
-        />
+  return (
+    <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
+      <Div
+        $flex={{ direction: "horizontal", verticalAlign: "center" }}
+        $overflow="hidden"
+        $style={{ minWidth: 0, flex: 1 }}
+      >
+        <EditableLocationBar segments={segments} />
       </Div>
-    );
-  },
-);
+      <ClusterToolbarActions
+        entity={entity}
+        resourcePluralName={resourcePluralName}
+        namespace={namespace}
+        resourceName={kubeObject?.metadata.name}
+        resourceSelfLink={kubeObject?.metadata.selfLink}
+      />
+    </Div>
+  );
+});
 
 const LocationBar = observer(() => {
   const activeClusterEntity = useSyncInject(activeClusterEntityForSelectedTabInjectionToken).get();
@@ -434,7 +446,7 @@ const LocationBar = observer(() => {
     <ClusterBreadcrumb
       tabId={selectedClusterTab.tabId}
       clusterId={selectedClusterTab.clusterId}
-      fallbackClusterName={activeClusterEntity.metadata.name}
+      entity={activeClusterEntity}
       resourcePath={selectedClusterTab.kubeResource}
     />
   );
