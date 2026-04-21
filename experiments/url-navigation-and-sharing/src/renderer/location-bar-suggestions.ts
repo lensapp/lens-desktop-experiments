@@ -45,3 +45,9 @@ export const suggestResourcePlurals = (
   query: string,
   limit: number = defaultSuggestionLimit,
 ): readonly Suggestion[] => toSuggestions(plurals, query, limit);
+
+export const suggestResourceNames = (
+  names: readonly string[],
+  query: string,
+  limit: number = defaultSuggestionLimit,
+): readonly Suggestion[] => toSuggestions(names, query, limit);

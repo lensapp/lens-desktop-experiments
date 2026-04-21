@@ -15,6 +15,8 @@ import { Button, ClickableDiv, Div, Form, Input, Li, Span, Ul } from "@lensapp/e
 import { CheckIcon, ContentCopyIcon, ShareIcon } from "@lensapp/icon";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { allNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
+import { type KubeResourceKind, kubeResourcesForKindInjectionToken } from "@lensapp/kube-resource";
+import { isLoaded } from "@lensapp/loadable-utilities";
 import { copyToClipboardInjectionToken } from "@lensapp/electron";
 import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
 import { isMacInjectable } from "@lensapp/vars";
@@ -30,10 +32,12 @@ import { getActiveSegment } from "./caret-segment";
 import {
   suggestClusters,
   suggestNamespaces,
+  suggestResourceNames,
   suggestResourcePlurals,
   type Suggestion,
 } from "./location-bar-suggestions";
 import { registeredResourcePluralsInjectionToken } from "./registered-resource-plurals.injectable";
+import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
 import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
@@ -252,6 +256,66 @@ type NamespaceSuggestionsProps = {
   readonly onSuggestionsChange: (suggestions: readonly Suggestion[]) => void;
 };
 
+type ResourceNameSuggestionsProps = {
+  readonly anchorRef: React.RefObject<HTMLInputElement | null>;
+  readonly clusterId: string;
+  readonly kind: KubeResourceKind;
+  readonly namespace: string | undefined;
+  readonly query: string;
+  readonly listboxId: string;
+  readonly activeIndex: number;
+  readonly onPick: (suggestion: Suggestion) => void;
+  readonly onSuggestionsChange: (suggestions: readonly Suggestion[]) => void;
+};
+
+const ResourceNameSuggestions = observer(
+  ({
+    anchorRef,
+    clusterId,
+    kind,
+    namespace,
+    query,
+    listboxId,
+    activeIndex,
+    onPick,
+    onSuggestionsChange,
+  }: ResourceNameSuggestionsProps) => {
+    const loadable = useSyncInject(kubeResourcesForKindInjectionToken.for(kind), clusterId).get();
+    const suggestions = useMemo(() => {
+      if (!isLoaded(loadable)) {
+        return [];
+      }
+
+      const names = loadable.value
+        .filter(
+          (resource) =>
+            namespace === undefined || (resource.metadata as { readonly namespace?: string }).namespace === namespace,
+        )
+        .map((resource) => resource.metadata.name);
+
+      return suggestResourceNames(names, query);
+    }, [loadable, namespace, query]);
+
+    useEffect(() => {
+      onSuggestionsChange(suggestions);
+    }, [suggestions, onSuggestionsChange]);
+
+    if (suggestions.length === 0) {
+      return null;
+    }
+
+    return (
+      <SuggestionsListbox
+        anchorRef={anchorRef}
+        listboxId={listboxId}
+        suggestions={suggestions}
+        activeIndex={activeIndex}
+        onPick={onPick}
+      />
+    );
+  },
+);
+
 const NamespaceSuggestions = observer(
   ({ anchorRef, clusterId, query, listboxId, activeIndex, onPick, onSuggestionsChange }: NamespaceSuggestionsProps) => {
     const namespaces = useSyncInject(allNamespacesInjectionToken, clusterId).get();
@@ -283,12 +347,13 @@ const insertSuggestionIntoInput = (
   rangeEnd: number,
   insertText: string,
 ): { readonly nextValue: string; readonly nextCaret: number } => {
+  const slot = value.slice(rangeStart, rangeEnd);
+  const leading = slot.slice(0, slot.length - slot.trimStart().length);
+  const trailingLength = slot.length - slot.trimEnd().length;
+  const trailing = trailingLength === 0 ? "" : slot.slice(slot.length - trailingLength);
   const before = value.slice(0, rangeStart);
   const after = value.slice(rangeEnd);
-  const leading = before.endsWith(" ") || before.length === 0 ? "" : " ";
-  const trailing = after.startsWith(" ") || after.length === 0 ? "" : " ";
-  const inserted = `${leading}${insertText}${trailing}`;
-  const nextValue = `${before}${inserted}${after}`;
+  const nextValue = `${before}${leading}${insertText}${trailing}${after}`;
   const nextCaret = before.length + leading.length + insertText.length;
 
   return { nextValue, nextCaret };
@@ -297,12 +362,14 @@ const insertSuggestionIntoInput = (
 const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCancel }: LocationBarInputProps) => {
   const clusters = useSyncInject(clustersInjectionToken).get();
   const registeredPlurals = useSyncInject(registeredResourcePluralsInjectionToken);
+  const resolveKindOrUndefined = useSyncInject(resolveKubeResourceKindOrUndefinedInjectionToken);
   const inputRef = useRef<HTMLInputElement>(null);
   const listboxId = useId();
   const [value, setValue] = useState(initialValue);
   const [caret, setCaret] = useState(initialValue.length);
   const [activeIndex, setActiveIndex] = useState(0);
   const [namespaceSuggestions, setNamespaceSuggestions] = useState<readonly Suggestion[]>([]);
+  const [resourceNameSuggestions, setResourceNameSuggestions] = useState<readonly Suggestion[]>([]);
   const [suppressDropdown, setSuppressDropdown] = useState(false);
 
   const activeSegment = getActiveSegment(value, caret);
@@ -310,6 +377,11 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
   const resolvedClusterId = parsed
     ? clusters.find((candidate) => candidate.name === parsed.clusterName)?.id
     : undefined;
+  const resolvedKind = useMemo(
+    () => (parsed?.resourcePluralName ? resolveKindOrUndefined(parsed.resourcePluralName) : undefined),
+    [parsed?.resourcePluralName, resolveKindOrUndefined],
+  );
+  const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
   const clusterNames = useMemo(() => clusters.map((cluster) => cluster.name), [clusters]);
 
   const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
@@ -330,7 +402,14 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
 
   const showNamespaceDropdown = !suppressDropdown && activeSegment.index === 1 && resolvedClusterId !== undefined;
 
-  const activeSuggestions: readonly Suggestion[] = showNamespaceDropdown ? namespaceSuggestions : staticSuggestions;
+  const showResourceNameDropdown =
+    !suppressDropdown && activeSegment.index === 3 && resolvedClusterId !== undefined && resolvedKind !== undefined;
+
+  const activeSuggestions: readonly Suggestion[] = showResourceNameDropdown
+    ? resourceNameSuggestions
+    : showNamespaceDropdown
+      ? namespaceSuggestions
+      : staticSuggestions;
 
   useEffect(() => {
     setActiveIndex((previous) => {
@@ -525,6 +604,19 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
             activeIndex={activeIndex}
             onPick={acceptSuggestion}
             onSuggestionsChange={setNamespaceSuggestions}
+          />
+        )}
+        {showResourceNameDropdown && (
+          <ResourceNameSuggestions
+            anchorRef={inputRef}
+            clusterId={resolvedClusterId as string}
+            kind={resolvedKind as KubeResourceKind}
+            namespace={resolvedNamespace}
+            query={activeSegment.text}
+            listboxId={listboxId}
+            activeIndex={activeIndex}
+            onPick={acceptSuggestion}
+            onSuggestionsChange={setResourceNameSuggestions}
           />
         )}
       </Div>

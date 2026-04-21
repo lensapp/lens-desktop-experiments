@@ -1,5 +1,6 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { getClusterAddressHash, getClusterServerChannel } from "@lensapp/share-common";
+import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";
 import { entitiesWithKindInjectionToken } from "@lensapp/entity-aggregator";
 import type { Entity } from "@lensapp/entity-aggregator";
@@ -105,6 +106,12 @@ const navigateFromShareLinkInjectable = getInjectable({
       if (!kind) {
         return { kind: "resource-type-not-found", resourcePluralName: parsed.resourcePluralName };
       }
+
+      const requestClusterActivation = di.inject(requestClusterActivationInjectionToken);
+      const waitForClusterToBeReady = di.inject(waitForClusterToBeReadyInjectionToken);
+
+      await requestClusterActivation({ clusterId });
+      await waitForClusterToBeReady(clusterId);
 
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), clusterId);
       const tabId = await showTab();
