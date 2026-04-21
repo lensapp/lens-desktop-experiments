@@ -42,7 +42,8 @@
     "@lensapp/utility-feature": "^1.3.0",
     "@lensapp/vars": "^2.2.1",
     "mobx-react": "^9.2.0",
-    "react": "^19.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@lensapp/cluster-common": "^6.0.2",
@@ -71,8 +72,10 @@
     "@lensapp/utility-feature": "^1.3.0",
     "@lensapp/vars": "^2.2.1",
     "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "mobx-react": "^9.2.0",
     "react": "^19.0.0",
+    "react-dom": "^19.0.0",
     "typescript": "^5.6.0"
   }
 }

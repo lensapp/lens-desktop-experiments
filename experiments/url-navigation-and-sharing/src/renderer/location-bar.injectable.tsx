@@ -20,7 +20,8 @@ import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
 import { isMacInjectable } from "@lensapp/vars";
 import type { Entity } from "@lensapp/entity-aggregator";
 import { observer } from "mobx-react";
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
@@ -148,64 +149,101 @@ type LocationBarInputProps = {
 };
 
 type SuggestionsListboxProps = {
+  readonly anchorRef: React.RefObject<HTMLInputElement | null>;
   readonly listboxId: string;
   readonly suggestions: readonly Suggestion[];
   readonly activeIndex: number;
   readonly onPick: (suggestion: Suggestion) => void;
 };
 
-const SuggestionsListbox = ({ listboxId, suggestions, activeIndex, onPick }: SuggestionsListboxProps) => (
-  <Ul
-    id={listboxId}
-    role="listbox"
-    $style={{
-      position: "absolute",
-      top: "calc(100% + 2px)",
-      left: 0,
-      right: 0,
-      margin: 0,
-      padding: "4px 0",
-      listStyle: "none",
-      background: "var(--colorBackgroundSecondary, var(--colorPrimary))",
-      border: "1px solid var(--colorBorderPrimary, rgba(127,127,127,0.3))",
-      borderRadius: "4px",
-      boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
-      maxHeight: "16rem",
-      overflowY: "auto",
-      zIndex: 1000,
-    }}
-  >
-    {suggestions.map((suggestion, index) => {
-      const optionId = `${listboxId}-option-${index}`;
+const useAnchorRect = (anchorRef: React.RefObject<HTMLElement | null>): DOMRect | undefined => {
+  const [rect, setRect] = useState<DOMRect | undefined>(undefined);
 
-      return (
-        <Li
-          key={optionId}
-          id={optionId}
-          role="option"
-          aria-selected={index === activeIndex}
-          onMouseDown={(event: React.MouseEvent<HTMLLIElement>) => {
-            event.preventDefault();
-            onPick(suggestion);
-          }}
-          $style={{
-            padding: "4px 12px",
-            cursor: "pointer",
-            background:
-              index === activeIndex ? "var(--colorBackgroundTertiary, rgba(127,127,127,0.15))" : "transparent",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {suggestion.label}
-        </Li>
-      );
-    })}
-  </Ul>
-);
+  useLayoutEffect(() => {
+    const element = anchorRef.current;
+
+    if (!element) {
+      return undefined;
+    }
+
+    const update = () => setRect(element.getBoundingClientRect());
+
+    update();
+
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [anchorRef]);
+
+  return rect;
+};
+
+const SuggestionsListbox = ({ anchorRef, listboxId, suggestions, activeIndex, onPick }: SuggestionsListboxProps) => {
+  const rect = useAnchorRect(anchorRef);
+
+  if (!rect) {
+    return null;
+  }
+
+  return createPortal(
+    <Ul
+      id={listboxId}
+      role="listbox"
+      $style={{
+        position: "fixed",
+        top: `${rect.bottom + 2}px`,
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        margin: 0,
+        padding: "4px 0",
+        listStyle: "none",
+        background: "var(--colorBackgroundSecondary, var(--colorPrimary, #1e1e1e))",
+        border: "1px solid var(--colorBorderPrimary, rgba(127,127,127,0.3))",
+        borderRadius: "4px",
+        boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
+        maxHeight: "16rem",
+        overflowY: "auto",
+        zIndex: 1000,
+      }}
+    >
+      {suggestions.map((suggestion, index) => {
+        const optionId = `${listboxId}-option-${index}`;
+
+        return (
+          <Li
+            key={optionId}
+            id={optionId}
+            role="option"
+            aria-selected={index === activeIndex}
+            onMouseDown={(event: React.MouseEvent<HTMLLIElement>) => {
+              event.preventDefault();
+              onPick(suggestion);
+            }}
+            $style={{
+              padding: "4px 12px",
+              cursor: "pointer",
+              background:
+                index === activeIndex ? "var(--colorBackgroundTertiary, rgba(127,127,127,0.15))" : "transparent",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {suggestion.label}
+          </Li>
+        );
+      })}
+    </Ul>,
+    document.body,
+  );
+};
 
 type NamespaceSuggestionsProps = {
+  readonly anchorRef: React.RefObject<HTMLInputElement | null>;
   readonly clusterId: string;
   readonly query: string;
   readonly listboxId: string;
@@ -215,7 +253,7 @@ type NamespaceSuggestionsProps = {
 };
 
 const NamespaceSuggestions = observer(
-  ({ clusterId, query, listboxId, activeIndex, onPick, onSuggestionsChange }: NamespaceSuggestionsProps) => {
+  ({ anchorRef, clusterId, query, listboxId, activeIndex, onPick, onSuggestionsChange }: NamespaceSuggestionsProps) => {
     const namespaces = useSyncInject(allNamespacesInjectionToken, clusterId).get();
     const suggestions = useMemo(() => suggestNamespaces(namespaces, query), [namespaces, query]);
 
@@ -228,7 +266,13 @@ const NamespaceSuggestions = observer(
     }
 
     return (
-      <SuggestionsListbox listboxId={listboxId} suggestions={suggestions} activeIndex={activeIndex} onPick={onPick} />
+      <SuggestionsListbox
+        anchorRef={anchorRef}
+        listboxId={listboxId}
+        suggestions={suggestions}
+        activeIndex={activeIndex}
+        onPick={onPick}
+      />
     );
   },
 );
@@ -437,7 +481,7 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
       $padding={{ horizontal: "s" }}
       $style={{ fontFamily: "monospace", width: "min(40rem, 60vw)" }}
     >
-      <Div $relative $style={{ flex: 1, minWidth: 0 }}>
+      <Div $style={{ flex: 1, minWidth: 0 }}>
         <Input
           ref={inputRef}
           autoFocus
@@ -465,6 +509,7 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
         />
         {staticSuggestions.length > 0 && (
           <SuggestionsListbox
+            anchorRef={inputRef}
             listboxId={listboxId}
             suggestions={staticSuggestions}
             activeIndex={activeIndex}
@@ -473,6 +518,7 @@ const LocationBarInput = observer(({ initialValue, errorMessage, onSubmit, onCan
         )}
         {showNamespaceDropdown && (
           <NamespaceSuggestions
+            anchorRef={inputRef}
             clusterId={resolvedClusterId as string}
             query={activeSegment.text}
             listboxId={listboxId}
