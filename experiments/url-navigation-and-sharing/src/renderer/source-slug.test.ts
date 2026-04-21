@@ -1,4 +1,4 @@
-import { connectionTypeForSource, denormalizeSourceSlug, normalizeSourceSlug } from "./source-slug";
+import { connectionTypeForSlug, normalizeSourceSlug, teamworkSourceSlug } from "./source-slug";
 
 describe("normalizeSourceSlug", () => {
   it("strips the -cluster-source suffix", () => {
@@ -14,24 +14,14 @@ describe("normalizeSourceSlug", () => {
   });
 });
 
-describe("denormalizeSourceSlug", () => {
-  it("appends -cluster-source to a stripped slug", () => {
-    expect(denormalizeSourceSlug("local-kubeconfig")).toBe("local-kubeconfig-cluster-source");
+describe("connectionTypeForSlug", () => {
+  it("returns teamwork for the teamwork slug", () => {
+    expect(connectionTypeForSlug(teamworkSourceSlug)).toBe("teamwork");
   });
 
-  it("does not double-append when the suffix is already present", () => {
-    expect(denormalizeSourceSlug("local-kubeconfig-cluster-source")).toBe("local-kubeconfig-cluster-source");
-  });
-});
-
-describe("connectionTypeForSource", () => {
-  it("returns teamwork for lens-spaces-cluster-source", () => {
-    expect(connectionTypeForSource("lens-spaces-cluster-source")).toBe("teamwork");
-  });
-
-  it("returns direct for everything else", () => {
-    expect(connectionTypeForSource("local-kubeconfig-cluster-source")).toBe("direct");
-    expect(connectionTypeForSource("eks-cluster-source")).toBe("direct");
-    expect(connectionTypeForSource("some-unknown-source")).toBe("direct");
+  it("returns direct for every other slug", () => {
+    expect(connectionTypeForSlug("local-kubeconfig")).toBe("direct");
+    expect(connectionTypeForSlug("eks")).toBe("direct");
+    expect(connectionTypeForSlug("some-unknown-source")).toBe("direct");
   });
 });

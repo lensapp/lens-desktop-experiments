@@ -238,7 +238,13 @@ const EditableLocationBar = ({ segments }: EditableLocationBarProps) => {
           return;
         }
 
-        await navigateFromShareLink(parsed);
+        const failure = await navigateFromShareLink(parsed);
+
+        if (failure) {
+          setErrorMessage(`Cluster from "${failure.sourceSlug}" link not found in this Lens`);
+          return;
+        }
+
         setIsEditing(false);
         setErrorMessage(undefined);
         return;
