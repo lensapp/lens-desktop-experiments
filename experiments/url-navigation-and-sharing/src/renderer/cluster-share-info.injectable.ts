@@ -1,6 +1,7 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { getClusterAddressHash, getClusterServerChannel } from "@lensapp/share-common";
 import { clusterSourceInjectionToken } from "@lensapp/cluster-source";
+import { getPredictableIdInjectionToken } from "@lensapp/utility-feature";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";
 import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import type { Entity } from "@lensapp/entity-aggregator";
@@ -24,30 +25,37 @@ export const resolveClusterShareInfoInjectionToken = getInjectionToken<ResolveCl
 
 const directFallbackSlug = "direct";
 
-// A cluster entity carries `metadata.parentId` equal to the ClusterSource
-// entity id, which in turn matches `clusterSourceInjectionToken`'s `meta.id`
-// (see `consume-cluster-sources-from-renderer.injectable.ts`). That gives us a
-// direct lookup from cluster entity → navigator source → navigator name, which
-// we slugify to keep the share link's prefix visually consistent with the
-// sidebar label users already recognise ("eks", "local-kubeconfigs", …).
+// A cluster entity's `metadata.parentId` is the parent ClusterSource entity's
+// `uid` — a v5 hash — not the cluster source injectable id, so we can't match
+// on parentId directly. Instead we walk `clusterSourceInjectionToken` and find
+// the source whose child id matches the cluster entity's `metadata.id`: the
+// serve-clusters-of-cluster-source pipeline constructs that id as
+// `getPredictableId(clusterSource.meta.id, dto.id)`, giving us an exact probe.
+// Once matched, we slugify `instance.name` ("EKS", "Local Kubeconfigs") so the
+// share link prefix mirrors the sidebar label users already recognise.
 const resolveClusterShareInfoInjectable = getInjectable({
   id: "url-navigation-and-sharing-resolve-cluster-share-info",
 
   instantiate: (di): ResolveClusterShareInfo => {
     const requestChannelRequesterFor = di.inject(requestChannelRequesterForInjectionToken);
     const getClusterServer = requestChannelRequesterFor(getClusterServerChannel);
+    const getPredictableId = di.inject(getPredictableIdInjectionToken);
     const clusterSources = di.injectManyWithMeta(clusterSourceInjectionToken);
 
     const navigatorSlugFor = (entity: Entity): string => {
-      const parentId = entity.metadata.parentId;
+      for (const { meta, instance } of clusterSources) {
+        const dtos = instance.clusters.get();
 
-      if (!parentId) {
-        return directFallbackSlug;
+        if (!dtos) {
+          continue;
+        }
+
+        if (dtos.some((dto) => getPredictableId(meta.id, dto.id) === entity.metadata.id)) {
+          return slugifyNavigatorName(instance.name);
+        }
       }
 
-      const match = clusterSources.find(({ meta }) => meta.id === parentId);
-
-      return match ? slugifyNavigatorName(match.instance.name) : directFallbackSlug;
+      return directFallbackSlug;
     };
 
     return async (entity) => {

@@ -11,7 +11,10 @@ import {
   resourceApiBaseForKindInjectionToken,
 } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
-import { showKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
+import {
+  hideKubeObjectDetailsPanelInjectionToken,
+  showKubeObjectDetailsPanelInjectionToken,
+} from "@lensapp/kube-object-details-panel";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { parseKubeApi } from "@lensapp/kube-api";
 import { connectionTypeForSlug } from "./source-slug";
@@ -135,6 +138,10 @@ const navigateFromShareLinkInjectable = getInjectable({
 
           showDetails({ clusterId, selfLink });
         }
+      } else {
+        const hideDetails = await di.inject(hideKubeObjectDetailsPanelInjectionToken, tabId);
+
+        hideDetails();
       }
 
       return undefined;

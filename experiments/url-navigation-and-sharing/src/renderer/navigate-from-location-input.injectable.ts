@@ -2,6 +2,7 @@ import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
+import { hideKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
 import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
@@ -94,6 +95,12 @@ const navigateFromLocationInputInjectable = getInjectable({
         });
 
         selectNamespaces([resolved.namespace]);
+      }
+
+      if (!resolved.resourceName) {
+        const hideDetails = await di.inject(hideKubeObjectDetailsPanelInjectionToken, tabId);
+
+        hideDetails();
       }
 
       return undefined;
