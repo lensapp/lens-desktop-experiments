@@ -77,6 +77,48 @@ describe("parseLocationBarInput", () => {
       expect(parseLocationBarInput("///")).toBeUndefined();
     });
   });
+
+  describe("given a known cluster name that contains slashes", () => {
+    const arnClusterName = "arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1";
+
+    it("keeps the ARN-style cluster name intact when it is the entire input", () => {
+      expect(parseLocationBarInput(arnClusterName, [arnClusterName])).toEqual({
+        clusterName: arnClusterName,
+        namespace: undefined,
+        resourcePluralName: undefined,
+        resourceName: undefined,
+      });
+    });
+
+    it("splits namespace/plural/name off after the ARN cluster name", () => {
+      expect(parseLocationBarInput(`${arnClusterName}/default/pods/nginx`, [arnClusterName])).toEqual({
+        clusterName: arnClusterName,
+        namespace: "default",
+        resourcePluralName: "pods",
+        resourceName: "nginx",
+      });
+    });
+
+    it("prefers the longest matching cluster name", () => {
+      const shortName = "arn:aws:eks:eu-west-1:841310725496:cluster";
+
+      expect(parseLocationBarInput(`${arnClusterName}/default`, [shortName, arnClusterName])).toEqual({
+        clusterName: arnClusterName,
+        namespace: "default",
+        resourcePluralName: undefined,
+        resourceName: undefined,
+      });
+    });
+
+    it("falls back to naive splitting when the input does not match any known cluster", () => {
+      expect(parseLocationBarInput(`${arnClusterName}/default`, ["some-other-cluster"])).toEqual({
+        clusterName: "arn:aws:eks:eu-west-1:841310725496:cluster",
+        namespace: "eksdemo1",
+        resourcePluralName: "default",
+        resourceName: undefined,
+      });
+    });
+  });
 });
 
 describe("resolveLocationSegments", () => {
