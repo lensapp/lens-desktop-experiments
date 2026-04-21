@@ -12,6 +12,7 @@ import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/ku
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { getCustomProtocolUrl } from "@lensapp/share-common";
 import { Button, ClickableDiv, Div, Form, Input, Span } from "@lensapp/element-components";
+import { CheckIcon, ContentCopyIcon, ShareIcon } from "@lensapp/icon";
 import { copyToClipboardInjectionToken } from "@lensapp/electron";
 import { showErrorNotificationInjectionToken } from "@lensapp/notifications";
 import { isMacInjectable } from "@lensapp/vars";
@@ -368,19 +369,20 @@ const ClusterToolbarActions = ({
     openShareMenu(url);
   }, [resolveClusterShareInfo, entity, resourcePluralName, resourceSelfLink, openShareMenu, showErrorNotification]);
 
-  const copyLabel = status === "copied" ? "Copied" : "Copy";
+  const copyTitle =
+    status === "copied" ? "Copied to clipboard" : "Copy a link that can be pasted into another Lens Desktop";
 
   return (
-    <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }} $padding={{ horizontal: "xs" }}>
+    <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xxs" }} $padding={{ horizontal: "xs" }}>
       <Button
         type="button"
         onClick={handleCopy}
         aria-label="Copy share link"
-        title="Copy a link that can be pasted into another Lens Desktop"
-        $padding={{ horizontal: "s", vertical: "xxs" }}
-        $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+        title={copyTitle}
+        $padding="xxs"
+        $style={{ background: "transparent", border: "none", display: "inline-flex", alignItems: "center" }}
       >
-        {copyLabel}
+        {status === "copied" ? <CheckIcon $size="s" /> : <ContentCopyIcon $size="s" />}
       </Button>
       {isMac && (
         <Button
@@ -388,10 +390,10 @@ const ClusterToolbarActions = ({
           onClick={handleShare}
           aria-label="Share via system share sheet"
           title="Share a lens:// link externally"
-          $padding={{ horizontal: "s", vertical: "xxs" }}
-          $style={{ fontFamily: "monospace", fontSize: "0.85em" }}
+          $padding="xxs"
+          $style={{ background: "transparent", border: "none", display: "inline-flex", alignItems: "center" }}
         >
-          Share
+          <ShareIcon $size="s" />
         </Button>
       )}
     </Div>
