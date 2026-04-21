@@ -113,5 +113,32 @@ describe("getActiveSegment", () => {
 
       expect(result).toMatchObject({ index: 2, text: "default" });
     });
+
+    it("treats a partially typed ARN as segment 0 so cluster autocomplete stays active", () => {
+      const partial = "arn:aws:eks:eu-west-1:841310725496:cluster/";
+      const result = getActiveSegment(partial, partial.length, [arnClusterName]);
+
+      expect(result).toEqual({
+        index: 0,
+        rangeStart: 0,
+        rangeEnd: partial.length,
+        text: partial,
+      });
+    });
+
+    it("treats any prefix of a known ARN as segment 0 regardless of caret position", () => {
+      const partial = "arn:aws:eks:eu-west-1:841310725496:cluster/eks";
+      const result = getActiveSegment(partial, 5, [arnClusterName]);
+
+      expect(result.index).toBe(0);
+      expect(result.text).toBe(partial);
+    });
+
+    it("does not treat a non-prefix string as a partial ARN match", () => {
+      const input = "arn:aws:eks:eu-west-1:999999999999:cluster/other";
+      const result = getActiveSegment(input, input.length, [arnClusterName]);
+
+      expect(result).toMatchObject({ index: 1, text: "other" });
+    });
   });
 });

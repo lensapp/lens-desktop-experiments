@@ -49,6 +49,17 @@ const matchClusterPrefix = (input: string, knownClusterNames: readonly string[])
   return candidates[0];
 };
 
+/**
+ * While a user is typing a cluster name that itself contains `/` (EKS ARNs),
+ * a `/` in the middle of the name would flip the caret into "segment 1" under
+ * naive positional logic, losing cluster autocomplete mid-word. If the value
+ * so far is a proper prefix of any known cluster name that contains `/`, treat
+ * the whole typed text as segment 0 so the cluster dropdown stays helpful.
+ */
+const isTypingClusterNameWithSlash = (input: string, knownClusterNames: readonly string[]): boolean =>
+  input.length > 0 &&
+  knownClusterNames.some((name) => name.includes(segmentSeparator) && name !== input && name.startsWith(input));
+
 export const getActiveSegment = (
   input: string,
   caret: number,
@@ -81,6 +92,15 @@ export const getActiveSegment = (
       rangeStart,
       rangeEnd,
       text: input.slice(rangeStart, rangeEnd).trim(),
+    };
+  }
+
+  if (isTypingClusterNameWithSlash(input, knownClusterNames)) {
+    return {
+      index: 0,
+      rangeStart: 0,
+      rangeEnd: input.length,
+      text: input,
     };
   }
 
