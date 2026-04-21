@@ -1,5 +1,6 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
+import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
 import type { KubeResourceKind } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
 import { hideKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
@@ -84,6 +85,12 @@ const navigateFromLocationInputInjectable = getInjectable({
       }
 
       const kind = kindByPlural.get(resolved.resourcePluralName) as KubeResourceKind;
+
+      const requestClusterActivation = di.inject(requestClusterActivationInjectionToken);
+      const waitForClusterToBeReady = di.inject(waitForClusterToBeReadyInjectionToken);
+
+      await requestClusterActivation({ clusterId: cluster.id });
+      await waitForClusterToBeReady(cluster.id);
 
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), cluster.id);
       const tabId = await showTab();

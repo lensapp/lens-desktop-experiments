@@ -1,4 +1,9 @@
-import { suggestClusters, suggestNamespaces, suggestResourcePlurals } from "./location-bar-suggestions";
+import {
+  suggestClusters,
+  suggestNamespaces,
+  suggestResourceNames,
+  suggestResourcePlurals,
+} from "./location-bar-suggestions";
 
 describe("suggestClusters", () => {
   it("returns every name when the query is empty", () => {
@@ -57,5 +62,17 @@ describe("suggestResourcePlurals", () => {
 
   it("is case-insensitive", () => {
     expect(suggestResourcePlurals(["Deployments"], "dep").map((s) => s.label)).toEqual(["Deployments"]);
+  });
+});
+
+describe("suggestResourceNames", () => {
+  it("returns every name when the query is empty", () => {
+    expect(suggestResourceNames(["pod-a", "pod-b"], "")).toHaveLength(2);
+  });
+
+  it("filters by substring", () => {
+    const result = suggestResourceNames(["nginx-1", "redis-1", "nginx-2"], "nginx");
+
+    expect(result.map((s) => s.label)).toEqual(["nginx-1", "nginx-2"]);
   });
 });
