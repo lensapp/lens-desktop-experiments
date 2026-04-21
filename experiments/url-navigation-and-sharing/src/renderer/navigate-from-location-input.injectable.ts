@@ -1,11 +1,19 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
-import type { KubeResourceKind } from "@lensapp/kube-resource";
+import {
+  createSelfLinkForKubeResourceInjectionToken,
+  type KubeResourceKind,
+  resourceApiBaseForKindInjectionToken,
+} from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
-import { hideKubeObjectDetailsPanelInjectionToken } from "@lensapp/kube-object-details-panel";
+import {
+  hideKubeObjectDetailsPanelInjectionToken,
+  showKubeObjectDetailsPanelInjectionToken,
+} from "@lensapp/kube-object-details-panel";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
+import { parseKubeApi } from "@lensapp/kube-api";
 import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
 import { tabTypeForLabel } from "./label-for-tab-type";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
@@ -104,7 +112,23 @@ const navigateFromLocationInputInjectable = getInjectable({
         selectNamespaces([resolved.namespace]);
       }
 
-      if (!resolved.resourceName) {
+      if (resolved.resourceName) {
+        const createSelfLink = di.inject(createSelfLinkForKubeResourceInjectionToken.for(kind));
+        const apiBase = di.inject(resourceApiBaseForKindInjectionToken.for(kind));
+        const parsedApi = parseKubeApi(apiBase);
+
+        if (parsedApi) {
+          const selfLink = createSelfLink({
+            apiVersion: parsedApi.apiVersionWithGroup,
+            name: resolved.resourceName,
+            namespace: resolved.namespace,
+          });
+
+          const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);
+
+          showDetails({ clusterId: cluster.id, selfLink });
+        }
+      } else {
         const hideDetails = await di.inject(hideKubeObjectDetailsPanelInjectionToken, tabId);
 
         hideDetails();
