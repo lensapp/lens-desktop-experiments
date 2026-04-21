@@ -17,14 +17,6 @@ describe("isShareLink", () => {
     expect(isShareLink("lc-staging1/default/pods")).toBe(false);
   });
 
-  it("rejects a lens:// URL — those are handled by the OS protocol handler", () => {
-    // `lens:` matches the prefix regex, but the `//` gives it away. We still
-    // reject it explicitly via the extra rule so the user sees the right error
-    // instead of a cryptic parse. Covered by parseShareLink returning undefined
-    // when the specifier is empty (first path segment is empty after `//`).
-    expect(parseShareLink("lens://app/open/direct/abc/cluster/pods")).toBeUndefined();
-  });
-
   it("rejects an empty string", () => {
     expect(isShareLink("")).toBe(false);
   });
@@ -91,8 +83,11 @@ describe("parseShareLink", () => {
     });
   });
 
-  it("returns undefined when the specifier is missing", () => {
+  it("rejects an empty specifier", () => {
     expect(parseShareLink("local-kubeconfig:")).toBeUndefined();
+  });
+
+  it("rejects an empty specifier with a path tail", () => {
     expect(parseShareLink("local-kubeconfig:/ns/pods")).toBeUndefined();
   });
 

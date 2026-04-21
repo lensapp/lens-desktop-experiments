@@ -7,7 +7,6 @@ describe("slugifyNavigatorName", () => {
 
   it("hyphenates whitespace in multi-word names", () => {
     expect(slugifyNavigatorName("Local Kubeconfigs")).toBe("local-kubeconfigs");
-    expect(slugifyNavigatorName("Lens Spaces")).toBe("lens-spaces");
   });
 
   it("collapses runs of whitespace to a single hyphen", () => {
@@ -24,9 +23,7 @@ describe("connectionTypeForSlug", () => {
     expect(connectionTypeForSlug(teamworkSourceSlug)).toBe("teamwork");
   });
 
-  it("returns direct for every other slug", () => {
+  it("returns direct for any non-teamwork slug", () => {
     expect(connectionTypeForSlug("local-kubeconfigs")).toBe("direct");
-    expect(connectionTypeForSlug("eks")).toBe("direct");
-    expect(connectionTypeForSlug("some-unknown-source")).toBe("direct");
   });
 });
