@@ -20,6 +20,14 @@ describe("isShareLink", () => {
   it("rejects an empty string", () => {
     expect(isShareLink("")).toBe(false);
   });
+
+  it("rejects an EKS ARN (multiple colons before the first slash)", () => {
+    expect(isShareLink("arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1")).toBe(false);
+  });
+
+  it("rejects a bare slug with no specifier", () => {
+    expect(isShareLink("local-kubeconfig:")).toBe(false);
+  });
 });
 
 describe("parseShareLink", () => {

@@ -6,10 +6,12 @@ export type ParsedShareLink = {
   readonly resourceName: string | undefined;
 };
 
-// Matches `<slug>:` at the very start of the (trimmed) input. The slug must
-// begin with a letter and may contain letters, digits, and hyphens. Requiring
-// a letter avoids false positives on things like `:pods`.
-const shareLinkPrefixRegex = /^[a-z][a-z0-9-]*:/i;
+// Matches `<slug>:<specifier>(/|$)` at the very start of the (trimmed) input.
+// The slug must begin with a letter and may contain letters, digits, and
+// hyphens. The specifier segment must not contain any further `:` so that ARNs
+// like `arn:aws:eks:...:cluster/eksdemo1` — which have several `:` before the
+// first `/` — aren't misread as share links.
+const shareLinkPrefixRegex = /^[a-z][a-z0-9-]*:[^:/]+(?:\/|$)/i;
 
 export const isShareLink = (input: string): boolean => shareLinkPrefixRegex.test(input.trimStart());
 
