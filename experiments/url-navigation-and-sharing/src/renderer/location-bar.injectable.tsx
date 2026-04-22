@@ -380,8 +380,23 @@ const LocationBarInput = observer(
       () => clusterDescriptors.map((descriptor) => descriptor.displayName),
       [clusterDescriptors],
     );
-    const activeSegment = getActiveSegment(value, caret, clusterDisplayNames);
-    const parsed = parseLocationBarInput(value, clusterDisplayNames);
+    const clusterLookupNames = useMemo(() => {
+      const seen = new Set<string>();
+      const names: string[] = [];
+
+      for (const descriptor of clusterDescriptors) {
+        for (const candidate of [descriptor.displayName, descriptor.name]) {
+          if (!seen.has(candidate)) {
+            seen.add(candidate);
+            names.push(candidate);
+          }
+        }
+      }
+
+      return names;
+    }, [clusterDescriptors]);
+    const activeSegment = getActiveSegment(value, caret, clusterLookupNames);
+    const parsed = parseLocationBarInput(value, clusterLookupNames);
     const resolvedClusterId = parsed
       ? findClusterByDisplayNameOrName(clusterDescriptors, parsed.clusterName)?.id
       : undefined;
@@ -700,10 +715,21 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
   const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
-  const clusterDisplayNames = useMemo(
-    () => clusterDescriptors.map((descriptor) => descriptor.displayName),
-    [clusterDescriptors],
-  );
+  const clusterLookupNames = useMemo(() => {
+    const seen = new Set<string>();
+    const names: string[] = [];
+
+    for (const descriptor of clusterDescriptors) {
+      for (const candidate of [descriptor.displayName, descriptor.name]) {
+        if (!seen.has(candidate)) {
+          seen.add(candidate);
+          names.push(candidate);
+        }
+      }
+    }
+
+    return names;
+  }, [clusterDescriptors]);
   const [isEditing, setIsEditing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
@@ -759,7 +785,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
         return true;
       }
 
-      const parsed = parseLocationBarInput(value, clusterDisplayNames);
+      const parsed = parseLocationBarInput(value, clusterLookupNames);
 
       if (!parsed) {
         setErrorMessage("Enter a path like cluster/namespace/pods");
@@ -776,7 +802,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
       setErrorMessage(undefined);
       return true;
     },
-    [navigate, navigateFromShareLink, clusterDisplayNames],
+    [navigate, navigateFromShareLink, clusterLookupNames],
   );
 
   if (isEditing) {
