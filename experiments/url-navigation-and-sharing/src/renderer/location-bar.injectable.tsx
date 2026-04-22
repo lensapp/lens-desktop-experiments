@@ -12,7 +12,7 @@ import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/ku
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { getCustomProtocolUrl } from "@lensapp/share-common";
 import { Button, ClickableDiv, Div, Form, Input, Li, Span, Ul } from "@lensapp/element-components";
-import { CheckIcon, ContentCopyIcon, ShareIcon } from "@lensapp/icon";
+import { CheckIcon, ContentCopyIcon, ShareIcon, SpinnerIcon } from "@lensapp/icon";
 import { allNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { clusterDescriptorsInjectable, findClusterByDisplayNameOrName } from "./cluster-descriptors.injectable";
 import { type KubeResourceKind, kubeResourcesForKindInjectionToken } from "@lensapp/kube-resource";
@@ -375,6 +375,7 @@ const LocationBarInput = observer(
     const [namespaceSuggestions, setNamespaceSuggestions] = useState<readonly Suggestion[]>([]);
     const [resourceNameSuggestions, setResourceNameSuggestions] = useState<readonly Suggestion[]>([]);
     const [suppressDropdown, setSuppressDropdown] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const clusterDisplayNames = useMemo(
       () => clusterDescriptors.map((descriptor) => descriptor.displayName),
@@ -590,7 +591,15 @@ const LocationBarInput = observer(
           setCaret(caretAfterAccept);
         }
 
-        const success = await onSubmit(submittedValue);
+        setIsSubmitting(true);
+
+        let success: boolean;
+
+        try {
+          success = await onSubmit(submittedValue);
+        } finally {
+          setIsSubmitting(false);
+        }
 
         if (!success) {
           return;
@@ -646,13 +655,15 @@ const LocationBarInput = observer(
             onKeyDown={handleKeyDown}
             onSelect={handleSelect}
             onPaste={handlePaste}
+            readOnly={isSubmitting}
             aria-label="Location input"
             aria-invalid={errorMessage !== undefined}
             aria-autocomplete="list"
+            aria-busy={isSubmitting}
             role="combobox"
-            aria-expanded={dropdownIsOpen}
-            aria-controls={dropdownIsOpen ? listboxId : undefined}
-            aria-activedescendant={activeDescendantId}
+            aria-expanded={dropdownIsOpen && !isSubmitting}
+            aria-controls={dropdownIsOpen && !isSubmitting ? listboxId : undefined}
+            aria-activedescendant={isSubmitting ? undefined : activeDescendantId}
             $style={{
               fontFamily: "monospace",
               width: "100%",
@@ -661,9 +672,10 @@ const LocationBarInput = observer(
               outline: "none",
               background: "transparent",
               color: "inherit",
+              opacity: isSubmitting ? 0.6 : 1,
             }}
           />
-          {staticSuggestions.length > 0 && (
+          {!isSubmitting && staticSuggestions.length > 0 && (
             <SuggestionsListbox
               anchorRef={inputRef}
               listboxId={listboxId}
@@ -672,7 +684,7 @@ const LocationBarInput = observer(
               onPick={acceptSuggestion}
             />
           )}
-          {showNamespaceDropdown && (
+          {!isSubmitting && showNamespaceDropdown && (
             <NamespaceSuggestions
               anchorRef={inputRef}
               clusterId={resolvedClusterId as string}
@@ -683,7 +695,7 @@ const LocationBarInput = observer(
               onSuggestionsChange={setNamespaceSuggestions}
             />
           )}
-          {showResourceNameDropdown && (
+          {!isSubmitting && showResourceNameDropdown && (
             <ResourceNameSuggestions
               anchorRef={inputRef}
               clusterId={resolvedClusterId as string}
@@ -697,7 +709,16 @@ const LocationBarInput = observer(
             />
           )}
         </Div>
-        {errorMessage && (
+        {isSubmitting && (
+          <Span
+            role="status"
+            aria-label="Navigating"
+            $style={{ display: "inline-flex", alignItems: "center", opacity: 0.7 }}
+          >
+            <SpinnerIcon $size="s" />
+          </Span>
+        )}
+        {!isSubmitting && errorMessage && (
           <Span role="alert" $style={{ color: "var(--colorError)", whiteSpace: "nowrap" }}>
             {errorMessage}
           </Span>
