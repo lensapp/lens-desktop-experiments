@@ -75,3 +75,31 @@ export const synthesizeClusterBreadcrumb = (input: ClusterBreadcrumbInput): read
 
   return segments;
 };
+
+/**
+ * Same shape as the display breadcrumb but emits raw values the editable
+ * location bar can parse back. In particular, `*` survives as-is (rather than
+ * being rendered "All namespaces"), multi-namespace selections become a comma
+ * list (rather than "3 namespaces"), and the placeholder glyph is dropped.
+ */
+export const synthesizeEditableClusterPath = (input: ClusterBreadcrumbInput): readonly string[] => {
+  const segments: string[] = [input.clusterName];
+
+  const resourcePluralName = input.resourcePath ? pluralNameFromResourcePath(input.resourcePath) : undefined;
+
+  const resourceIsClusterScoped = resourcePluralName !== undefined && clusterScopedPluralNames.has(resourcePluralName);
+
+  if (resourcePluralName) {
+    segments.push(resourcePluralName);
+  }
+
+  if (input.namespaces !== undefined && input.namespaces.length > 0 && !resourceIsClusterScoped) {
+    segments.push(input.namespaces.join(","));
+  }
+
+  if (input.resourceName) {
+    segments.push(input.resourceName);
+  }
+
+  return segments;
+};

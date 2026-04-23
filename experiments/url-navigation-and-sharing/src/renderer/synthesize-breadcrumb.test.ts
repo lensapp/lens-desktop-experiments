@@ -1,4 +1,4 @@
-import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
+import { synthesizeClusterBreadcrumb, synthesizeEditableClusterPath } from "./synthesize-breadcrumb";
 
 describe("synthesizeClusterBreadcrumb", () => {
   describe("given a namespaced resource tab", () => {
@@ -154,5 +154,62 @@ describe("synthesizeClusterBreadcrumb", () => {
 
       expect(segments).toEqual(["lc-staging1", "nodes", "ip-10-0-0-1"]);
     });
+  });
+});
+
+describe("synthesizeEditableClusterPath", () => {
+  it("emits the wildcard namespace verbatim instead of the display label", () => {
+    const segments = synthesizeEditableClusterPath({
+      clusterName: "lc-staging1",
+      namespaces: ["*"],
+      resourcePath: "/api/pods",
+      resourceName: undefined,
+    });
+
+    expect(segments).toEqual(["lc-staging1", "pods", "*"]);
+  });
+
+  it("joins multiple namespaces with commas instead of showing a count", () => {
+    const segments = synthesizeEditableClusterPath({
+      clusterName: "lc-staging1",
+      namespaces: ["default", "kube-system", "monitoring"],
+      resourcePath: "/api/pods",
+      resourceName: undefined,
+    });
+
+    expect(segments).toEqual(["lc-staging1", "pods", "default,kube-system,monitoring"]);
+  });
+
+  it("omits the namespace segment entirely for an empty selection (no placeholder glyph)", () => {
+    const segments = synthesizeEditableClusterPath({
+      clusterName: "lc-staging1",
+      namespaces: [],
+      resourcePath: "/api/pods",
+      resourceName: undefined,
+    });
+
+    expect(segments).toEqual(["lc-staging1", "pods"]);
+  });
+
+  it("keeps a single namespace as-is", () => {
+    const segments = synthesizeEditableClusterPath({
+      clusterName: "lc-staging1",
+      namespaces: ["monitoring"],
+      resourcePath: "/api/pods",
+      resourceName: undefined,
+    });
+
+    expect(segments).toEqual(["lc-staging1", "pods", "monitoring"]);
+  });
+
+  it("still skips the namespace slot for cluster-scoped kinds", () => {
+    const segments = synthesizeEditableClusterPath({
+      clusterName: "lc-staging1",
+      namespaces: ["*"],
+      resourcePath: "/api/nodes",
+      resourceName: "ip-10-0-0-1",
+    });
+
+    expect(segments).toEqual(["lc-staging1", "nodes", "ip-10-0-0-1"]);
   });
 });
