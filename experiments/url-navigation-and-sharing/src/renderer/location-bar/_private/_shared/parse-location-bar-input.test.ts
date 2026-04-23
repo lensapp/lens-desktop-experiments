@@ -145,6 +145,15 @@ describe("parseLocationBarInput", () => {
         resourceName: undefined,
       });
     });
+
+    it("tolerates whitespace padding around the separator that follows the ARN", () => {
+      expect(parseLocationBarInput(`${arnClusterName} / pods / default`, [arnClusterName])).toEqual({
+        clusterName: arnClusterName,
+        resourcePluralName: "pods",
+        namespaces: ["default"],
+        resourceName: undefined,
+      });
+    });
   });
 });
 

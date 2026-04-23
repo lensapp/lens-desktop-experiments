@@ -140,5 +140,19 @@ describe("getActiveSegment", () => {
 
       expect(result).toMatchObject({ index: 1, text: "other" });
     });
+
+    it("reports segment 1 after an ARN with a padded separator", () => {
+      const input = `${arnClusterName} / default`;
+      const result = getActiveSegment(input, input.length, [arnClusterName]);
+
+      expect(result).toMatchObject({ index: 1, text: "default" });
+    });
+
+    it("reports segment 2 for the plural after an ARN with padded separators", () => {
+      const input = `${arnClusterName} / default / pods`;
+      const result = getActiveSegment(input, input.length, [arnClusterName]);
+
+      expect(result).toMatchObject({ index: 2, text: "pods" });
+    });
   });
 });

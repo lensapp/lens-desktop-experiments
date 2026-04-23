@@ -43,7 +43,17 @@ const lastIndexOfBefore = (input: string, character: string, limitExclusive: num
  */
 const matchClusterPrefix = (input: string, knownClusterNames: readonly string[]): string | undefined => {
   const candidates = knownClusterNames
-    .filter((name) => input === name || input.startsWith(`${name}${segmentSeparator}`))
+    .filter((name) => {
+      if (input === name) {
+        return true;
+      }
+
+      if (!input.startsWith(name)) {
+        return false;
+      }
+
+      return /^\s*\//.test(input.slice(name.length));
+    })
     .sort((a, b) => b.length - a.length);
 
   return candidates[0];
@@ -78,7 +88,9 @@ export const getActiveSegment = (
       };
     }
 
-    const afterClusterStart = matchedCluster.length + 1;
+    const afterName = input.slice(matchedCluster.length);
+    const separatorWidth = afterName.match(/^\s*\/\s*/)?.[0].length ?? 1;
+    const afterClusterStart = matchedCluster.length + separatorWidth;
     const rest = input.slice(afterClusterStart);
     const restCaret = clampedCaret - afterClusterStart;
     const separatorsBefore = countOccurrencesBefore(rest, segmentSeparator, restCaret);

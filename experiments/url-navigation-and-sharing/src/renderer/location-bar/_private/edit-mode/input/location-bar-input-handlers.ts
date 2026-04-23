@@ -3,6 +3,7 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { Suggestion } from "../suggestions/location-bar-suggestions";
 import { insertSuggestionIntoInput } from "./insert-suggestion-into-input";
 import { isShareLink } from "../../_shared/parse-share-link";
+import { normalizeLocationBarSlashes } from "../../_shared/normalize-location-bar-slashes";
 import type { LocationBarInputView } from "./derive-location-bar-input-view";
 
 export type LocationBarInputStateSetters = {
@@ -34,6 +35,7 @@ type CreateHandlersArgs = {
   readonly caret: number;
   readonly activeIndex: number;
   readonly view: LocationBarInputView;
+  readonly clusterLookupNames: readonly string[];
   readonly setters: LocationBarInputStateSetters;
   readonly callbacks: LocationBarInputCallbacks;
   readonly inputRef: RefObject<HTMLInputElement | null>;
@@ -51,6 +53,7 @@ export const createLocationBarInputHandlers = ({
   caret,
   activeIndex,
   view,
+  clusterLookupNames,
   setters,
   callbacks,
   inputRef,
@@ -73,9 +76,20 @@ export const createLocationBarInputHandlers = ({
   };
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setters.setValue(event.target.value);
-    setters.setCaret(event.target.selectionStart ?? event.target.value.length);
+    const rawValue = event.target.value;
+    const rawCaret = event.target.selectionStart ?? rawValue.length;
+    const shouldNormalize = rawValue.length > value.length;
+    const next = shouldNormalize
+      ? normalizeLocationBarSlashes(rawValue, rawCaret, clusterLookupNames)
+      : { value: rawValue, caret: rawCaret };
+
+    setters.setValue(next.value);
+    setters.setCaret(next.caret);
     setters.setSuppressDropdown(false);
+
+    if (next.value !== rawValue && inputRef.current) {
+      focusAndPlaceCaret(inputRef.current, next.caret);
+    }
   };
 
   const handleSelect = () => {

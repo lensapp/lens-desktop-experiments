@@ -48,7 +48,7 @@ export type LocationBarInputView = {
   readonly isLastSegment: boolean;
 };
 
-const buildClusterLookupNames = (descriptors: readonly ClusterDescriptor[]): readonly string[] => {
+export const buildClusterLookupNames = (descriptors: readonly ClusterDescriptor[]): readonly string[] => {
   const seen = new Set<string>();
   const names: string[] = [];
 

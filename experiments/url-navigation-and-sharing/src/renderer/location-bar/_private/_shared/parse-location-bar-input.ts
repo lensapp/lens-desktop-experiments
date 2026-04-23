@@ -25,11 +25,23 @@ const splitNamespaces = (segment: string | undefined): readonly string[] | undef
  * `arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1`). Naive `/`-splitting
  * then treats the ARN suffix as a resource plural. When we know the
  * registered cluster names, try longest-prefix match first so the cluster
- * name is kept intact no matter how many `/`s it contains.
+ * name is kept intact no matter how many `/`s it contains. Whitespace is
+ * tolerated around the separator that follows the ARN so padded input
+ * (`ARN / pods`) still parses.
  */
 const matchKnownClusterPrefix = (input: string, knownClusterNames: readonly string[]): string | undefined => {
   const candidates = knownClusterNames
-    .filter((name) => input === name || input.startsWith(`${name}/`))
+    .filter((name) => {
+      if (input === name) {
+        return true;
+      }
+
+      if (!input.startsWith(name)) {
+        return false;
+      }
+
+      return /^\s*\//.test(input.slice(name.length));
+    })
     .sort((a, b) => b.length - a.length);
 
   return candidates[0];
@@ -55,7 +67,7 @@ export const parseLocationBarInput = (
   const matchedCluster = matchKnownClusterPrefix(normalized, knownClusterNames);
 
   if (matchedCluster) {
-    const remainder = normalized.slice(matchedCluster.length).replace(/^\/+/, "");
+    const remainder = normalized.slice(matchedCluster.length).replace(/^\s*\/+\s*/, "");
     const [resourcePluralName, namespaceSegment, resourceName] = remainder
       .split("/")
       .map((segment) => segment.trim())
