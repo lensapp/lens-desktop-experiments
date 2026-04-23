@@ -7,7 +7,10 @@ import {
   selectedClusterTabInjectionToken,
 } from "@lensapp/kubernetes-resources";
 import { selectedTabReactiveInjectionToken } from "@lensapp/main-view";
-import { selectedNamespacesForFilteringInjectionToken } from "@lensapp/selecting-namespaces";
+import {
+  areAllNamespacesSelectedInjectionToken,
+  selectedNamespacesForFilteringInjectionToken,
+} from "@lensapp/selecting-namespaces";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { getCustomProtocolUrl } from "@lensapp/share-common";
@@ -972,10 +975,15 @@ type ClusterBreadcrumbProps = {
 
 const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: ClusterBreadcrumbProps) => {
   const displayName = useSyncInject(clusterDisplayNameInjectionToken, clusterId).get();
-  const namespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+  const filteredNamespaces = useInjectAsReactive(selectedNamespacesForFilteringInjectionToken, { tabId, clusterId })
+    .get()
+    ?.get();
+  const areAllNamespacesSelected = useInjectAsReactive(areAllNamespacesSelectedInjectionToken, { tabId, clusterId })
     .get()
     ?.get();
   const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
+
+  const namespaces = areAllNamespacesSelected ? [allNamespacesSelectedValue] : filteredNamespaces;
 
   const breadcrumbInput = {
     clusterName: displayName ?? entity.metadata.name,
