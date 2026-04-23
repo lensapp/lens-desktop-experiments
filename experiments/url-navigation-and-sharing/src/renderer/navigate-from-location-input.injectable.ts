@@ -3,7 +3,7 @@ import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectio
 import { clusterDescriptorsInjectable, findClusterByDisplayNameOrName } from "./cluster-descriptors.injectable";
 import {
   createSelfLinkForKubeResourceInjectionToken,
-  type KubeResourceKind,
+  kubeResourcesForKindInjectionToken,
   resourceApiBaseForKindInjectionToken,
 } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
@@ -14,9 +14,11 @@ import {
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
 import { parseKubeApi } from "@lensapp/kube-api";
-import { type ParsedLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
+import { isLoaded } from "@lensapp/loadable-utilities";
+import { type ParsedLocationBarInput, resolveClusterScopedSegments } from "./parse-location-bar-input";
 import { tabTypeForLabel } from "./label-for-tab-type";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
+import { makeIsKindNamespaced } from "./is-plural-namespaced";
 
 export type NavigationFailure =
   | { readonly kind: "cluster-not-found"; readonly clusterName: string }
@@ -64,35 +66,33 @@ const navigateFromLocationInputInjectable = getInjectable({
         return { kind: "cluster-not-found", clusterName: input.clusterName };
       }
 
-      const kindByPlural = new Map<string, KubeResourceKind>();
-
-      const canResolvePlural = (pluralName: string): boolean => {
-        if (kindByPlural.has(pluralName)) {
-          return true;
-        }
-
-        const kind = resolveKindOrUndefined(pluralName);
+      const isKindNamespaced = makeIsKindNamespaced((plural) => {
+        const kind = resolveKindOrUndefined(plural);
 
         if (!kind) {
-          return false;
+          return undefined;
         }
 
-        kindByPlural.set(pluralName, kind);
+        const state = di.inject(kubeResourcesForKindInjectionToken.for(kind), cluster.id).get();
 
-        return true;
-      };
+        if (!isLoaded(state)) {
+          return undefined;
+        }
 
-      const resolved = resolveLocationSegments(input, canResolvePlural);
+        return state.value;
+      });
+
+      const resolved = resolveClusterScopedSegments(input, isKindNamespaced);
 
       if (!resolved.resourcePluralName) {
         return undefined;
       }
 
-      if (!canResolvePlural(resolved.resourcePluralName)) {
+      const kind = resolveKindOrUndefined(resolved.resourcePluralName);
+
+      if (!kind) {
         return { kind: "resource-type-not-found", resourcePluralName: resolved.resourcePluralName };
       }
-
-      const kind = kindByPlural.get(resolved.resourcePluralName) as KubeResourceKind;
 
       const requestClusterActivation = di.inject(requestClusterActivationInjectionToken);
       const waitForClusterToBeReady = di.inject(waitForClusterToBeReadyInjectionToken);

@@ -1,47 +1,47 @@
-import { parseLocationBarInput, resolveLocationSegments } from "./parse-location-bar-input";
+import { parseLocationBarInput, resolveClusterScopedSegments } from "./parse-location-bar-input";
 
 describe("parseLocationBarInput", () => {
-  it("given a full four-segment path, parses cluster, namespace, resource plural, and resource name", () => {
-    expect(parseLocationBarInput("lc-staging1/bored-system/pods/nginx-abc")).toEqual({
+  it("given a full four-segment path, parses cluster, resource plural, namespace, and resource name", () => {
+    expect(parseLocationBarInput("lc-staging1/pods/bored-system/nginx-abc")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["bored-system"],
       resourcePluralName: "pods",
+      namespaces: ["bored-system"],
       resourceName: "nginx-abc",
     });
   });
 
-  it("given a three-segment path without a resource name, parses cluster, namespace, and resource plural", () => {
-    expect(parseLocationBarInput("lc-staging1/default/deployments")).toEqual({
+  it("given a three-segment path without a resource name, parses cluster, plural, and namespace", () => {
+    expect(parseLocationBarInput("lc-staging1/deployments/default")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default"],
       resourcePluralName: "deployments",
+      namespaces: ["default"],
       resourceName: undefined,
     });
   });
 
   it("given a comma-separated namespace segment, parses multiple namespaces", () => {
-    expect(parseLocationBarInput("lc-staging1/default,kube-system/pods")).toEqual({
+    expect(parseLocationBarInput("lc-staging1/pods/default,kube-system")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default", "kube-system"],
       resourcePluralName: "pods",
+      namespaces: ["default", "kube-system"],
       resourceName: undefined,
     });
   });
 
   it("trims whitespace between comma-separated namespaces", () => {
-    expect(parseLocationBarInput("lc-staging1/default , kube-system/pods")).toEqual({
+    expect(parseLocationBarInput("lc-staging1/pods/default , kube-system")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default", "kube-system"],
       resourcePluralName: "pods",
+      namespaces: ["default", "kube-system"],
       resourceName: undefined,
     });
   });
 
-  it("given a two-segment path, parses cluster and namespace only", () => {
-    expect(parseLocationBarInput("lc-staging1/default")).toEqual({
+  it("given a two-segment path, parses cluster and resource plural only", () => {
+    expect(parseLocationBarInput("lc-staging1/pods")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default"],
-      resourcePluralName: undefined,
+      resourcePluralName: "pods",
+      namespaces: undefined,
       resourceName: undefined,
     });
   });
@@ -49,35 +49,35 @@ describe("parseLocationBarInput", () => {
   it("given a single-segment path, parses the cluster name only", () => {
     expect(parseLocationBarInput("lc-staging1")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: undefined,
       resourcePluralName: undefined,
+      namespaces: undefined,
       resourceName: undefined,
     });
   });
 
   it("given whitespace around segments, trims each segment", () => {
-    expect(parseLocationBarInput("  lc-staging1 / default / pods ")).toEqual({
+    expect(parseLocationBarInput("  lc-staging1 / pods / default ")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default"],
       resourcePluralName: "pods",
+      namespaces: ["default"],
       resourceName: undefined,
     });
   });
 
   it("given leading and trailing slashes, ignores them", () => {
-    expect(parseLocationBarInput("/lc-staging1/default/pods/")).toEqual({
+    expect(parseLocationBarInput("/lc-staging1/pods/default/")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default"],
       resourcePluralName: "pods",
+      namespaces: ["default"],
       resourceName: undefined,
     });
   });
 
   it("given empty segments between slashes, collapses them", () => {
-    expect(parseLocationBarInput("lc-staging1//pods")).toEqual({
+    expect(parseLocationBarInput("lc-staging1//default")).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["pods"],
-      resourcePluralName: undefined,
+      resourcePluralName: "default",
+      namespaces: undefined,
       resourceName: undefined,
     });
   });
@@ -102,26 +102,26 @@ describe("parseLocationBarInput", () => {
     it("keeps the ARN-style cluster name intact when it is the entire input", () => {
       expect(parseLocationBarInput(arnClusterName, [arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespaces: undefined,
         resourcePluralName: undefined,
+        namespaces: undefined,
         resourceName: undefined,
       });
     });
 
-    it("splits namespace/plural/name off after the ARN cluster name", () => {
-      expect(parseLocationBarInput(`${arnClusterName}/default/pods/nginx`, [arnClusterName])).toEqual({
+    it("splits plural/namespace/name off after the ARN cluster name", () => {
+      expect(parseLocationBarInput(`${arnClusterName}/pods/default/nginx`, [arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespaces: ["default"],
         resourcePluralName: "pods",
+        namespaces: ["default"],
         resourceName: "nginx",
       });
     });
 
     it("splits comma-separated namespaces after the ARN cluster name", () => {
-      expect(parseLocationBarInput(`${arnClusterName}/default,kube-system/pods`, [arnClusterName])).toEqual({
+      expect(parseLocationBarInput(`${arnClusterName}/pods/default,kube-system`, [arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespaces: ["default", "kube-system"],
         resourcePluralName: "pods",
+        namespaces: ["default", "kube-system"],
         resourceName: undefined,
       });
     });
@@ -129,180 +129,149 @@ describe("parseLocationBarInput", () => {
     it("prefers the longest matching cluster name", () => {
       const shortName = "arn:aws:eks:eu-west-1:841310725496:cluster";
 
-      expect(parseLocationBarInput(`${arnClusterName}/default`, [shortName, arnClusterName])).toEqual({
+      expect(parseLocationBarInput(`${arnClusterName}/pods`, [shortName, arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespaces: ["default"],
-        resourcePluralName: undefined,
+        resourcePluralName: "pods",
+        namespaces: undefined,
         resourceName: undefined,
       });
     });
 
     it("falls back to naive splitting when the input does not match any known cluster", () => {
-      expect(parseLocationBarInput(`${arnClusterName}/default`, ["some-other-cluster"])).toEqual({
+      expect(parseLocationBarInput(`${arnClusterName}/pods`, ["some-other-cluster"])).toEqual({
         clusterName: "arn:aws:eks:eu-west-1:841310725496:cluster",
-        namespaces: ["eksdemo1"],
-        resourcePluralName: "default",
+        resourcePluralName: "eksdemo1",
+        namespaces: ["pods"],
         resourceName: undefined,
       });
     });
   });
 });
 
-describe("resolveLocationSegments", () => {
-  describe("given a cluster-scoped resource typed without a namespace segment", () => {
-    it("shifts the plural up and drops the namespace", () => {
-      expect(
-        resolveLocationSegments(
-          {
-            clusterName: "lc-staging1",
-            namespaces: ["nodes"],
-            resourcePluralName: undefined,
-            resourceName: undefined,
-          },
-          canResolvePlural,
-        ),
-      ).toEqual({
-        clusterName: "lc-staging1",
-        namespaces: undefined,
-        resourcePluralName: "nodes",
-        resourceName: undefined,
-      });
-    });
+describe("resolveClusterScopedSegments", () => {
+  const isNamespaced = (plural: string) => {
+    if (plural === "nodes" || plural === "persistentvolumes") {
+      return false;
+    }
 
-    it("shifts the resource name along with the plural", () => {
-      expect(
-        resolveLocationSegments(
-          {
-            clusterName: "lc-staging1",
-            namespaces: ["nodes"],
-            resourcePluralName: "ip-10-0-0-1",
-            resourceName: undefined,
-          },
-          canResolvePlural,
-        ),
-      ).toEqual({
-        clusterName: "lc-staging1",
-        namespaces: undefined,
-        resourcePluralName: "nodes",
-        resourceName: "ip-10-0-0-1",
-      });
-    });
+    if (plural === "pods" || plural === "deployments") {
+      return true;
+    }
 
-    it("shifts for any known plural, not only cluster-scoped ones", () => {
-      expect(
-        resolveLocationSegments(
-          {
-            clusterName: "lc-staging1",
-            namespaces: ["pods"],
-            resourcePluralName: undefined,
-            resourceName: undefined,
-          },
-          canResolvePlural,
-        ),
-      ).toEqual({
-        clusterName: "lc-staging1",
-        namespaces: undefined,
-        resourcePluralName: "pods",
-        resourceName: undefined,
-      });
-    });
+    return undefined;
+  };
 
-    it("does not shift when multiple namespaces are parsed (they cannot collectively be a misread plural)", () => {
-      expect(
-        resolveLocationSegments(
-          {
-            clusterName: "lc-staging1",
-            namespaces: ["pods", "extra"],
-            resourcePluralName: undefined,
-            resourceName: undefined,
-          },
-          canResolvePlural,
-        ),
-      ).toEqual({
-        clusterName: "lc-staging1",
-        namespaces: ["pods", "extra"],
-        resourcePluralName: undefined,
-        resourceName: undefined,
-      });
-    });
-  });
-
-  it("given an already-valid three-segment path, does not shift when the plural slot resolves", () => {
+  it("shifts a cluster-scoped three-segment path so the namespace slot becomes the resource name", () => {
     expect(
-      resolveLocationSegments(
+      resolveClusterScopedSegments(
         {
           clusterName: "lc-staging1",
-          namespaces: ["default"],
-          resourcePluralName: "pods",
+          resourcePluralName: "nodes",
+          namespaces: ["ip-10-0-0-1"],
           resourceName: undefined,
         },
-        canResolvePlural,
+        isNamespaced,
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["default"],
+      resourcePluralName: "nodes",
+      namespaces: undefined,
+      resourceName: "ip-10-0-0-1",
+    });
+  });
+
+  it("leaves a namespaced three-segment path alone", () => {
+    expect(
+      resolveClusterScopedSegments(
+        {
+          clusterName: "lc-staging1",
+          resourcePluralName: "pods",
+          namespaces: ["default"],
+          resourceName: undefined,
+        },
+        isNamespaced,
+      ),
+    ).toEqual({
+      clusterName: "lc-staging1",
       resourcePluralName: "pods",
+      namespaces: ["default"],
       resourceName: undefined,
     });
   });
 
-  it("given a four-segment path, does not shift when the plural slot resolves", () => {
+  it("leaves three-segment paths with unknown scope alone", () => {
     expect(
-      resolveLocationSegments(
+      resolveClusterScopedSegments(
         {
           clusterName: "lc-staging1",
-          namespaces: ["default"],
-          resourcePluralName: "pods",
-          resourceName: "nginx-abc",
-        },
-        canResolvePlural,
-      ),
-    ).toEqual({
-      clusterName: "lc-staging1",
-      namespaces: ["default"],
-      resourcePluralName: "pods",
-      resourceName: "nginx-abc",
-    });
-  });
-
-  it("given an unknown resource plural in both slots, leaves the input untouched so the navigator can surface the error", () => {
-    expect(
-      resolveLocationSegments(
-        {
-          clusterName: "lc-staging1",
-          namespaces: ["bogus"],
-          resourcePluralName: "also-bogus",
+          resourcePluralName: "unknown-kind",
+          namespaces: ["foo"],
           resourceName: undefined,
         },
-        canResolvePlural,
+        isNamespaced,
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["bogus"],
-      resourcePluralName: "also-bogus",
+      resourcePluralName: "unknown-kind",
+      namespaces: ["foo"],
       resourceName: undefined,
     });
   });
 
-  it("given a plausible namespace name in the namespace slot, does not shift when the name is not a known plural", () => {
+  it("clears the namespace slot when a cluster-scoped four-segment path is somehow provided", () => {
     expect(
-      resolveLocationSegments(
+      resolveClusterScopedSegments(
         {
           clusterName: "lc-staging1",
-          namespaces: ["monitoring"],
+          resourcePluralName: "nodes",
+          namespaces: ["unexpected"],
+          resourceName: "ip-10-0-0-1",
+        },
+        isNamespaced,
+      ),
+    ).toEqual({
+      clusterName: "lc-staging1",
+      resourcePluralName: "nodes",
+      namespaces: undefined,
+      resourceName: "ip-10-0-0-1",
+    });
+  });
+
+  it("leaves comma-separated namespace lists alone even for cluster-scoped kinds (ambiguous intent)", () => {
+    expect(
+      resolveClusterScopedSegments(
+        {
+          clusterName: "lc-staging1",
+          resourcePluralName: "nodes",
+          namespaces: ["foo", "bar"],
+          resourceName: undefined,
+        },
+        isNamespaced,
+      ),
+    ).toEqual({
+      clusterName: "lc-staging1",
+      resourcePluralName: "nodes",
+      namespaces: ["foo", "bar"],
+      resourceName: undefined,
+    });
+  });
+
+  it("is a no-op when no resource plural has been typed yet", () => {
+    expect(
+      resolveClusterScopedSegments(
+        {
+          clusterName: "lc-staging1",
           resourcePluralName: undefined,
+          namespaces: undefined,
           resourceName: undefined,
         },
-        canResolvePlural,
+        isNamespaced,
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespaces: ["monitoring"],
       resourcePluralName: undefined,
+      namespaces: undefined,
       resourceName: undefined,
     });
   });
 });
-
-const knownPlurals = new Set(["pods", "deployments", "nodes", "persistentvolumes", "clusterroles"]);
-const canResolvePlural = (name: string) => knownPlurals.has(name);

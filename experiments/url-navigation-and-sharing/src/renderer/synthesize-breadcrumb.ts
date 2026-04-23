@@ -61,12 +61,12 @@ export const synthesizeClusterBreadcrumb = (input: ClusterBreadcrumbInput): read
 
   const resourceIsClusterScoped = resourcePluralName !== undefined && clusterScopedPluralNames.has(resourcePluralName);
 
-  if (input.namespaces !== undefined && !resourceIsClusterScoped) {
-    segments.push(formatNamespaces(input.namespaces));
-  }
-
   if (resourcePluralName) {
     segments.push(resourcePluralName);
+  }
+
+  if (input.namespaces !== undefined && !resourceIsClusterScoped) {
+    segments.push(formatNamespaces(input.namespaces));
   }
 
   if (input.resourceName) {

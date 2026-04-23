@@ -8,6 +8,7 @@ import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import { kubernetesClusterContextKind } from "@lensapp/kubernetes-cluster-context";
 import {
   createSelfLinkForKubeResourceInjectionToken,
+  kubeResourcesForKindInjectionToken,
   resourceApiBaseForKindInjectionToken,
 } from "@lensapp/kube-resource";
 import { showPersistedKubeResourceTabInjectionToken } from "@lensapp/kubernetes-resources";
@@ -17,9 +18,12 @@ import {
 } from "@lensapp/kube-object-details-panel";
 import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { parseKubeApi } from "@lensapp/kube-api";
+import { isLoaded } from "@lensapp/loadable-utilities";
 import { connectionTypeForSlug } from "./source-slug";
 import type { ParsedShareLink } from "./parse-share-link";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
+import { resolveClusterScopedSegments } from "./parse-location-bar-input";
+import { makeIsKindNamespaced } from "./is-plural-namespaced";
 
 export type ShareLinkNavigationFailure =
   | {
@@ -107,6 +111,32 @@ const navigateFromShareLinkInjectable = getInjectable({
         return { kind: "resource-type-not-found", resourcePluralName: parsed.resourcePluralName };
       }
 
+      const isKindNamespaced = makeIsKindNamespaced((plural) => {
+        const sampleKind = resolveKindOrUndefined(plural);
+
+        if (!sampleKind) {
+          return undefined;
+        }
+
+        const state = di.inject(kubeResourcesForKindInjectionToken.for(sampleKind), clusterId).get();
+
+        if (!isLoaded(state)) {
+          return undefined;
+        }
+
+        return state.value;
+      });
+
+      const resolved = resolveClusterScopedSegments(
+        {
+          clusterName: parsed.clusterSpecifier,
+          resourcePluralName: parsed.resourcePluralName,
+          namespaces: parsed.namespaces,
+          resourceName: parsed.resourceName,
+        },
+        isKindNamespaced,
+      );
+
       const requestClusterActivation = di.inject(requestClusterActivationInjectionToken);
       const waitForClusterToBeReady = di.inject(waitForClusterToBeReadyInjectionToken);
 
@@ -116,13 +146,13 @@ const navigateFromShareLinkInjectable = getInjectable({
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), clusterId);
       const tabId = await showTab();
 
-      if (parsed.namespaces && parsed.namespaces.length > 0) {
+      if (resolved.namespaces && resolved.namespaces.length > 0) {
         const selectNamespaces = await di.inject(selectNamespacesInjectionToken, { clusterId, tabId });
 
-        selectNamespaces([...parsed.namespaces]);
+        selectNamespaces([...resolved.namespaces]);
       }
 
-      if (parsed.resourceName) {
+      if (resolved.resourceName) {
         const createSelfLink = di.inject(createSelfLinkForKubeResourceInjectionToken.for(kind));
         const apiBase = di.inject(resourceApiBaseForKindInjectionToken.for(kind));
         const parsedApi = parseKubeApi(apiBase);
@@ -130,8 +160,8 @@ const navigateFromShareLinkInjectable = getInjectable({
         if (parsedApi) {
           const selfLink = createSelfLink({
             apiVersion: parsedApi.apiVersionWithGroup,
-            name: parsed.resourceName,
-            namespace: parsed.namespaces?.[0],
+            name: resolved.resourceName,
+            namespace: resolved.namespaces?.[0],
           });
 
           const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);

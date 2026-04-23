@@ -1,7 +1,7 @@
 export type ParsedLocationBarInput = {
   readonly clusterName: string;
-  readonly namespaces: readonly string[] | undefined;
   readonly resourcePluralName: string | undefined;
+  readonly namespaces: readonly string[] | undefined;
   readonly resourceName: string | undefined;
 };
 
@@ -23,9 +23,9 @@ const splitNamespaces = (segment: string | undefined): readonly string[] | undef
 /**
  * EKS-style cluster names can contain `/` (e.g.
  * `arn:aws:eks:eu-west-1:841310725496:cluster/eksdemo1`). Naive `/`-splitting
- * then treats the ARN suffix as a namespace. When we know the registered
- * cluster names, try longest-prefix match first so the cluster name is kept
- * intact no matter how many `/`s it contains.
+ * then treats the ARN suffix as a resource plural. When we know the
+ * registered cluster names, try longest-prefix match first so the cluster
+ * name is kept intact no matter how many `/`s it contains.
  */
 const matchKnownClusterPrefix = (input: string, knownClusterNames: readonly string[]): string | undefined => {
   const candidates = knownClusterNames
@@ -35,6 +35,13 @@ const matchKnownClusterPrefix = (input: string, knownClusterNames: readonly stri
   return candidates[0];
 };
 
+/**
+ * Location-bar path layout is `cluster / resourcePlural / namespaces / resourceName`.
+ * Putting the plural directly after the cluster means autocomplete after the
+ * cluster slot is always a resource-type list; for namespaced kinds the
+ * namespace slot follows, and for cluster-scoped kinds the resource name
+ * follows (see `resolveClusterScopedSegments` for the shift).
+ */
 export const parseLocationBarInput = (
   input: string,
   knownClusterNames: readonly string[] = [],
@@ -49,15 +56,15 @@ export const parseLocationBarInput = (
 
   if (matchedCluster) {
     const remainder = normalized.slice(matchedCluster.length).replace(/^\/+/, "");
-    const [namespaceSegment, resourcePluralName, resourceName] = remainder
+    const [resourcePluralName, namespaceSegment, resourceName] = remainder
       .split("/")
       .map((segment) => segment.trim())
       .filter((segment) => segment.length > 0);
 
     return {
       clusterName: matchedCluster,
-      namespaces: splitNamespaces(namespaceSegment),
       resourcePluralName,
+      namespaces: splitNamespaces(namespaceSegment),
       resourceName,
     };
   }
@@ -67,7 +74,7 @@ export const parseLocationBarInput = (
     .map((segment) => segment.trim())
     .filter((segment) => segment.length > 0);
 
-  const [clusterName, namespaceSegment, resourcePluralName, resourceName] = segments;
+  const [clusterName, resourcePluralName, namespaceSegment, resourceName] = segments;
 
   if (!clusterName) {
     return undefined;
@@ -75,39 +82,43 @@ export const parseLocationBarInput = (
 
   return {
     clusterName,
-    namespaces: splitNamespaces(namespaceSegment),
     resourcePluralName,
+    namespaces: splitNamespaces(namespaceSegment),
     resourceName,
   };
 };
 
-export type CanResolvePlural = (pluralName: string) => boolean;
+export type IsKindNamespaced = (pluralName: string) => boolean | undefined;
 
 /**
- * Cluster-scoped resources render as `cluster / plural` (no namespace slot), so
- * naive positional parsing of `cluster/nodes` puts `nodes` in the namespace
- * slot. This shifts the segments when the namespace slot resolves as a known
- * plural and the plural slot does not — making the edit ↔ display round-trip
- * work for cluster-scoped kinds without requiring the user to type a
- * placeholder. Only a single namespace slot can hold a plural misread, so the
- * shift only applies when exactly one namespace was parsed.
+ * For cluster-scoped kinds, the path `cluster/plural/name` has no namespace
+ * segment — what the positional parser put in the namespace slot is actually
+ * the resource name. Shift it when the scope predicate confirms the kind is
+ * not namespaced. If the scope is unknown (predicate returns undefined) or
+ * the kind is namespaced, leave the parsed result alone.
  */
-export const resolveLocationSegments = (
+export const resolveClusterScopedSegments = (
   parsed: ParsedLocationBarInput,
-  canResolvePlural: CanResolvePlural,
+  isKindNamespaced: IsKindNamespaced,
 ): ParsedLocationBarInput => {
-  if (parsed.resourcePluralName && canResolvePlural(parsed.resourcePluralName)) {
+  if (!parsed.resourcePluralName) {
     return parsed;
   }
 
-  const firstNamespace = parsed.namespaces?.length === 1 ? parsed.namespaces[0] : undefined;
+  if (isKindNamespaced(parsed.resourcePluralName) !== false) {
+    return parsed;
+  }
 
-  if (firstNamespace && canResolvePlural(firstNamespace)) {
+  if (parsed.resourceName !== undefined) {
+    return { ...parsed, namespaces: undefined };
+  }
+
+  if (parsed.namespaces?.length === 1) {
     return {
       clusterName: parsed.clusterName,
+      resourcePluralName: parsed.resourcePluralName,
       namespaces: undefined,
-      resourcePluralName: firstNamespace,
-      resourceName: parsed.resourcePluralName,
+      resourceName: parsed.namespaces[0],
     };
   }
 
