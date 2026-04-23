@@ -158,10 +158,20 @@ const navigateFromShareLinkInjectable = getInjectable({
         const parsedApi = parseKubeApi(apiBase);
 
         if (parsedApi) {
+          const singleConcreteNamespace =
+            resolved.namespaces?.length === 1 && resolved.namespaces[0] !== "*" ? resolved.namespaces[0] : undefined;
+
+          const resourcesState = di.inject(kubeResourcesForKindInjectionToken.for(kind), clusterId).get();
+          const matchingResource = isLoaded(resourcesState)
+            ? resourcesState.value.find((resource) => resource.metadata.name === resolved.resourceName)
+            : undefined;
+          const namespaceFromLoadedSample = (matchingResource?.metadata as { readonly namespace?: string } | undefined)
+            ?.namespace;
+
           const selfLink = createSelfLink({
             apiVersion: parsedApi.apiVersionWithGroup,
             name: resolved.resourceName,
-            namespace: resolved.namespaces?.[0],
+            namespace: singleConcreteNamespace ?? namespaceFromLoadedSample,
           });
 
           const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);
