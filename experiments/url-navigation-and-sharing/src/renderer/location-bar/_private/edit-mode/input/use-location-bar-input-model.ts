@@ -1,9 +1,11 @@
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { clusterDescriptorsInjectable } from "../../monorepo-adapters/cluster-descriptors.injectable";
 import { registeredResourcePluralsInjectionToken } from "../../monorepo-adapters/registered-resource-plurals.injectable";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "../../monorepo-adapters/resolve-kube-resource-kind-or-undefined.injectable";
+import sendLocationBarTelemetryInjectable from "../../telemetry/send-location-bar-telemetry.injectable";
+import type { SuggestionSegment } from "../../telemetry/location-bar-telemetry-event";
 import type { Suggestion } from "../suggestions/location-bar-suggestions";
 import { deriveLocationBarInputView, type LocationBarInputView } from "./derive-location-bar-input-view";
 import {
@@ -22,7 +24,7 @@ export type LocationBarInputModel = LocationBarInputHandlers & {
   readonly setResourceNameSuggestions: (suggestions: readonly Suggestion[]) => void;
 };
 
-type UseLocationBarInputModelArgs = LocationBarInputCallbacks & {
+type UseLocationBarInputModelArgs = Omit<LocationBarInputCallbacks, "onSuggestionPicked"> & {
   readonly initialValue: string;
 };
 
@@ -35,6 +37,12 @@ export const useLocationBarInputModel = ({
   const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
   const registeredPlurals = useSyncInject(registeredResourcePluralsInjectionToken);
   const resolveKindOrUndefined = useSyncInject(resolveKubeResourceKindOrUndefinedInjectionToken);
+  const sendTelemetry = useSyncInject(sendLocationBarTelemetryInjectable);
+
+  const onSuggestionPicked = useCallback(
+    (segment: SuggestionSegment) => sendTelemetry({ action: "suggestion-picked", params: { segment } }),
+    [sendTelemetry],
+  );
 
   const inputRef = useRef<HTMLInputElement>(null);
   const [value, setValue] = useState(initialValue);
@@ -62,7 +70,7 @@ export const useLocationBarInputModel = ({
     activeIndex,
     view,
     setters: { setValue, setCaret, setActiveIndex, setSuppressDropdown, setIsSubmitting },
-    callbacks: { onSubmit, onFinish, onCancel },
+    callbacks: { onSubmit, onFinish, onCancel, onSuggestionPicked },
     inputRef,
   });
 

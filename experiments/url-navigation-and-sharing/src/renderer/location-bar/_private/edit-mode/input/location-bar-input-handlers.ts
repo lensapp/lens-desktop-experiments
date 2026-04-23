@@ -3,7 +3,9 @@ import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { Suggestion } from "../suggestions/location-bar-suggestions";
 import { insertSuggestionIntoInput } from "./insert-suggestion-into-input";
 import { isShareLink } from "../../_shared/parse-share-link";
+import type { SuggestionSegment } from "../../telemetry/location-bar-telemetry-event";
 import type { LocationBarInputView } from "./derive-location-bar-input-view";
+import { suggestionSegmentForView } from "./suggestion-segment-for-view";
 
 export type LocationBarInputStateSetters = {
   readonly setValue: Dispatch<SetStateAction<string>>;
@@ -17,6 +19,7 @@ export type LocationBarInputCallbacks = {
   readonly onSubmit: (value: string) => Promise<boolean>;
   readonly onFinish: () => void;
   readonly onCancel: () => void;
+  readonly onSuggestionPicked: (segment: SuggestionSegment) => void;
 };
 
 export type LocationBarInputHandlers = {
@@ -66,6 +69,7 @@ export const createLocationBarInputHandlers = ({
     setters.setValue(nextValue);
     setters.setCaret(nextCaret);
     setters.setActiveIndex(0);
+    callbacks.onSuggestionPicked(suggestionSegmentForView(view));
 
     if (inputRef.current) {
       focusAndPlaceCaret(inputRef.current, nextCaret);

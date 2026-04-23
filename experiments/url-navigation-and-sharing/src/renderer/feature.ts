@@ -15,6 +15,7 @@ import { messagingFeature } from "@lensapp/messaging";
 import { utilityFeature } from "@lensapp/utility-feature";
 import { electronFeature } from "@lensapp/electron";
 import { notificationsFeature } from "@lensapp/notifications";
+import { telemetryFeature } from "@lensapp/telemetry";
 import { varsFeature } from "@lensapp/vars";
 import { lensSpacesFeature } from "@lensapp/lens-spaces";
 
@@ -37,6 +38,7 @@ export const urlNavigationAndSharingRendererFeature = getFeature({
     utilityFeature,
     electronFeature,
     notificationsFeature,
+    telemetryFeature,
     varsFeature,
     lensSpacesFeature,
   ],
