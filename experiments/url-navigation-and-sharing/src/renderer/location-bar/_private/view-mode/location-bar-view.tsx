@@ -30,7 +30,7 @@ export const LocationBarView = ({ segments, onEditRequested }: LocationBarViewPr
     return (
       <Div
         data-location-bar-test
-        $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+        $flex={{ direction: "horizontal", verticalAlign: "center" }}
         $padding={{ horizontal: "s" }}
         $overflow="hidden"
         $style={{ fontFamily: "monospace", minWidth: 0 }}
@@ -45,7 +45,7 @@ export const LocationBarView = ({ segments, onEditRequested }: LocationBarViewPr
       data-location-bar-test
       onClick={onEditRequested}
       aria-label="Edit location"
-      $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xs" }}
+      $flex={{ direction: "horizontal", verticalAlign: "center" }}
       $padding={{ horizontal: "s" }}
       $overflow="hidden"
       $style={{ fontFamily: "monospace", minWidth: 0, cursor: "text" }}
