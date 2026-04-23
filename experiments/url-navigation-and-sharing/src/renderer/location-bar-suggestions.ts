@@ -51,3 +51,39 @@ export const suggestResourceNames = (
   query: string,
   limit: number = defaultSuggestionLimit,
 ): readonly Suggestion[] => toSuggestions(names, query, limit);
+
+export type CommaTail = {
+  readonly alreadyPicked: readonly string[];
+  readonly queryStart: number;
+  readonly query: string;
+};
+
+/**
+ * Splits a comma-separated segment into the already-picked prefix and the
+ * unfinished tail that autocomplete should match against. Used so the
+ * namespace segment can suggest after every comma instead of only when the
+ * segment is empty.
+ */
+export const narrowToCommaTail = (segmentText: string, segmentRangeStart: number): CommaTail => {
+  const lastCommaIndex = segmentText.lastIndexOf(",");
+
+  if (lastCommaIndex === -1) {
+    return {
+      alreadyPicked: [],
+      queryStart: segmentRangeStart,
+      query: segmentText.trim(),
+    };
+  }
+
+  const prefix = segmentText.slice(0, lastCommaIndex);
+  const alreadyPicked = prefix
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  return {
+    alreadyPicked,
+    queryStart: segmentRangeStart + lastCommaIndex + 1,
+    query: segmentText.slice(lastCommaIndex + 1).trim(),
+  };
+};

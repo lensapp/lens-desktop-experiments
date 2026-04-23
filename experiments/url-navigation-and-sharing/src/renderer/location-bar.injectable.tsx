@@ -33,6 +33,7 @@ import { parseLocationBarInput } from "./parse-location-bar-input";
 import { formatShareLink, isShareLink, parseShareLink } from "./parse-share-link";
 import { getActiveSegment } from "./caret-segment";
 import {
+  narrowToCommaTail,
   suggestClusters,
   suggestNamespaces,
   suggestResourceNames,
@@ -255,6 +256,7 @@ type NamespaceSuggestionsProps = {
   readonly anchorRef: React.RefObject<HTMLInputElement | null>;
   readonly clusterId: string;
   readonly query: string;
+  readonly alreadyPicked: readonly string[];
   readonly listboxId: string;
   readonly activeIndex: number;
   readonly onPick: (suggestion: Suggestion) => void;
@@ -322,13 +324,24 @@ const ResourceNameSuggestions = observer(
 );
 
 const NamespaceSuggestions = observer(
-  ({ anchorRef, clusterId, query, listboxId, activeIndex, onPick, onSuggestionsChange }: NamespaceSuggestionsProps) => {
+  ({
+    anchorRef,
+    clusterId,
+    query,
+    alreadyPicked,
+    listboxId,
+    activeIndex,
+    onPick,
+    onSuggestionsChange,
+  }: NamespaceSuggestionsProps) => {
     const namespaces = useSyncInject(allNamespacesInjectionToken, clusterId).get();
-    const namespacesWithWildcard = useMemo(() => [allNamespacesSelectedValue, ...namespaces], [namespaces]);
-    const suggestions = useMemo(
-      () => suggestNamespaces(namespacesWithWildcard, query),
-      [namespacesWithWildcard, query],
-    );
+    const candidateNamespaces = useMemo(() => {
+      const excludeSet = new Set(alreadyPicked);
+      const filtered = namespaces.filter((name) => !excludeSet.has(name));
+
+      return alreadyPicked.length > 0 ? filtered : [allNamespacesSelectedValue, ...filtered];
+    }, [namespaces, alreadyPicked]);
+    const suggestions = useMemo(() => suggestNamespaces(candidateNamespaces, query), [candidateNamespaces, query]);
 
     useEffect(() => {
       onSuggestionsChange(suggestions);
@@ -443,6 +456,13 @@ const LocationBarInput = observer(
       resolvedClusterId !== undefined &&
       resolvedKind !== undefined;
 
+    const namespaceAutocomplete = useMemo(
+      () => (showNamespaceDropdown ? narrowToCommaTail(activeSegment.text, activeSegment.rangeStart) : undefined),
+      [showNamespaceDropdown, activeSegment.text, activeSegment.rangeStart],
+    );
+
+    const effectiveRangeStart = namespaceAutocomplete?.queryStart ?? activeSegment.rangeStart;
+
     const showResourceNameDropdown =
       !suppressDropdown &&
       resolvedClusterId !== undefined &&
@@ -497,7 +517,7 @@ const LocationBarInput = observer(
       (suggestion: Suggestion) => {
         const { nextValue, nextCaret } = insertSuggestionIntoInput(
           value,
-          activeSegment.rangeStart,
+          effectiveRangeStart,
           activeSegment.rangeEnd,
           suggestion.insertText,
         );
@@ -515,7 +535,7 @@ const LocationBarInput = observer(
           });
         }
       },
-      [value, activeSegment.rangeStart, activeSegment.rangeEnd],
+      [value, effectiveRangeStart, activeSegment.rangeEnd],
     );
 
     const dropdownIsOpen = activeSuggestions.length > 0;
@@ -583,7 +603,7 @@ const LocationBarInput = observer(
         if (pickable) {
           const accepted = insertSuggestionIntoInput(
             value,
-            activeSegment.rangeStart,
+            effectiveRangeStart,
             activeSegment.rangeEnd,
             pickable.insertText,
             !isLastSegment,
@@ -631,13 +651,13 @@ const LocationBarInput = observer(
         activeSuggestions,
         activeIndex,
         activeSegment.index,
-        activeSegment.rangeStart,
         activeSegment.rangeEnd,
         resolvedIsClusterScoped,
         caret,
         value,
         onSubmit,
         onFinish,
+        effectiveRangeStart,
       ],
     );
 
@@ -693,7 +713,8 @@ const LocationBarInput = observer(
             <NamespaceSuggestions
               anchorRef={inputRef}
               clusterId={resolvedClusterId as string}
-              query={activeSegment.text}
+              query={namespaceAutocomplete?.query ?? activeSegment.text}
+              alreadyPicked={namespaceAutocomplete?.alreadyPicked ?? []}
               listboxId={listboxId}
               activeIndex={activeIndex}
               onPick={acceptSuggestion}
