@@ -35,7 +35,7 @@ describe("parseShareLink", () => {
     expect(parseShareLink("local-kubeconfig:a7ffc6f8bf1ed76651c14756a061d662/default/pods/nginx-abc")).toEqual({
       sourceSlug: "local-kubeconfig",
       clusterSpecifier: "a7ffc6f8bf1ed76651c14756a061d662",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: "nginx-abc",
     });
@@ -45,8 +45,28 @@ describe("parseShareLink", () => {
     expect(parseShareLink("lens-spaces:cluster-uuid/kube-system/deployments")).toEqual({
       sourceSlug: "lens-spaces",
       clusterSpecifier: "cluster-uuid",
-      namespace: "kube-system",
+      namespaces: ["kube-system"],
       resourcePluralName: "deployments",
+      resourceName: undefined,
+    });
+  });
+
+  it("extracts multiple comma-separated namespaces", () => {
+    expect(parseShareLink("local-kubeconfig:abc/default,kube-system/pods")).toEqual({
+      sourceSlug: "local-kubeconfig",
+      clusterSpecifier: "abc",
+      namespaces: ["default", "kube-system"],
+      resourcePluralName: "pods",
+      resourceName: undefined,
+    });
+  });
+
+  it("trims whitespace between comma-separated namespaces", () => {
+    expect(parseShareLink("local-kubeconfig:abc/default , kube-system/pods")).toEqual({
+      sourceSlug: "local-kubeconfig",
+      clusterSpecifier: "abc",
+      namespaces: ["default", "kube-system"],
+      resourcePluralName: "pods",
       resourceName: undefined,
     });
   });
@@ -55,7 +75,7 @@ describe("parseShareLink", () => {
     expect(parseShareLink("local-kubeconfig:abc/nodes")).toEqual({
       sourceSlug: "local-kubeconfig",
       clusterSpecifier: "abc",
-      namespace: "nodes",
+      namespaces: ["nodes"],
       resourcePluralName: undefined,
       resourceName: undefined,
     });
@@ -65,7 +85,7 @@ describe("parseShareLink", () => {
     expect(parseShareLink("local-kubeconfig:abc")).toEqual({
       sourceSlug: "local-kubeconfig",
       clusterSpecifier: "abc",
-      namespace: undefined,
+      namespaces: undefined,
       resourcePluralName: undefined,
       resourceName: undefined,
     });
@@ -75,7 +95,7 @@ describe("parseShareLink", () => {
     expect(parseShareLink("  eks:hash/default/pods  ")).toEqual({
       sourceSlug: "eks",
       clusterSpecifier: "hash",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: undefined,
     });
@@ -85,7 +105,7 @@ describe("parseShareLink", () => {
     expect(parseShareLink("eks:hash/default/pods/")).toEqual({
       sourceSlug: "eks",
       clusterSpecifier: "hash",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: undefined,
     });
@@ -114,11 +134,23 @@ describe("formatShareLink", () => {
       formatShareLink({
         sourceSlug: "local-kubeconfig",
         clusterSpecifier: "a7ffc6f8bf1ed76651c14756a061d662",
-        namespace: "default",
+        namespaces: ["default"],
         resourcePluralName: "pods",
         resourceName: "nginx-abc",
       }),
     ).toBe("local-kubeconfig:a7ffc6f8bf1ed76651c14756a061d662/default/pods/nginx-abc");
+  });
+
+  it("joins multiple namespaces with commas", () => {
+    expect(
+      formatShareLink({
+        sourceSlug: "local-kubeconfig",
+        clusterSpecifier: "abc",
+        namespaces: ["default", "kube-system"],
+        resourcePluralName: "pods",
+        resourceName: undefined,
+      }),
+    ).toBe("local-kubeconfig:abc/default,kube-system/pods");
   });
 
   it("omits missing trailing segments", () => {
@@ -126,7 +158,7 @@ describe("formatShareLink", () => {
       formatShareLink({
         sourceSlug: "lens-spaces",
         clusterSpecifier: "cluster-uuid",
-        namespace: "kube-system",
+        namespaces: ["kube-system"],
         resourcePluralName: "deployments",
         resourceName: undefined,
       }),
@@ -138,7 +170,7 @@ describe("formatShareLink", () => {
       formatShareLink({
         sourceSlug: "eks",
         clusterSpecifier: "hash",
-        namespace: undefined,
+        namespaces: undefined,
         resourcePluralName: undefined,
         resourceName: undefined,
       }),
@@ -149,9 +181,21 @@ describe("formatShareLink", () => {
     const parsed = {
       sourceSlug: "local-kubeconfig",
       clusterSpecifier: "abc",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: "nginx",
+    };
+
+    expect(parseShareLink(formatShareLink(parsed))).toEqual(parsed);
+  });
+
+  it("round-trips multiple namespaces through parseShareLink", () => {
+    const parsed = {
+      sourceSlug: "local-kubeconfig",
+      clusterSpecifier: "abc",
+      namespaces: ["default", "kube-system"],
+      resourcePluralName: "pods",
+      resourceName: undefined,
     };
 
     expect(parseShareLink(formatShareLink(parsed))).toEqual(parsed);

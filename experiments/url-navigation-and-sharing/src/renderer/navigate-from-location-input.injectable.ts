@@ -36,7 +36,7 @@ const navigateFromLocationInputInjectable = getInjectable({
     async (input) => {
       const resolveKindOrUndefined = di.inject(resolveKubeResourceKindOrUndefinedInjectionToken);
       const isJustFirstSegment =
-        input.namespace === undefined && input.resourcePluralName === undefined && input.resourceName === undefined;
+        input.namespaces === undefined && input.resourcePluralName === undefined && input.resourceName === undefined;
 
       if (isJustFirstSegment) {
         const tabType = tabTypeForLabel(input.clusterName);
@@ -103,13 +103,13 @@ const navigateFromLocationInputInjectable = getInjectable({
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), cluster.id);
       const tabId = await showTab();
 
-      if (resolved.namespace) {
+      if (resolved.namespaces && resolved.namespaces.length > 0) {
         const selectNamespaces = await di.inject(selectNamespacesInjectionToken, {
           clusterId: cluster.id,
           tabId,
         });
 
-        selectNamespaces([resolved.namespace]);
+        selectNamespaces([...resolved.namespaces]);
       }
 
       if (resolved.resourceName) {
@@ -121,7 +121,7 @@ const navigateFromLocationInputInjectable = getInjectable({
           const selfLink = createSelfLink({
             apiVersion: parsedApi.apiVersionWithGroup,
             name: resolved.resourceName,
-            namespace: resolved.namespace,
+            namespace: resolved.namespaces?.[0],
           });
 
           const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);
