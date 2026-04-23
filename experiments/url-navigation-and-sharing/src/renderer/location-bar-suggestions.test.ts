@@ -1,4 +1,5 @@
 import {
+  narrowToCommaTail,
   suggestClusters,
   suggestNamespaces,
   suggestResourceNames,
@@ -74,5 +75,47 @@ describe("suggestResourceNames", () => {
     const result = suggestResourceNames(["nginx-1", "redis-1", "nginx-2"], "nginx");
 
     expect(result.map((s) => s.label)).toEqual(["nginx-1", "nginx-2"]);
+  });
+});
+
+describe("narrowToCommaTail", () => {
+  it("treats a plain segment as the entire query with no already-picked entries", () => {
+    expect(narrowToCommaTail("default", 12)).toEqual({
+      alreadyPicked: [],
+      queryStart: 12,
+      query: "default",
+    });
+  });
+
+  it("splits out the tail after the last comma", () => {
+    expect(narrowToCommaTail("default,ku", 12)).toEqual({
+      alreadyPicked: ["default"],
+      queryStart: 20,
+      query: "ku",
+    });
+  });
+
+  it("returns an empty tail query when the user just typed a trailing comma", () => {
+    expect(narrowToCommaTail("default,", 12)).toEqual({
+      alreadyPicked: ["default"],
+      queryStart: 20,
+      query: "",
+    });
+  });
+
+  it("collects every namespace in the prefix as already-picked", () => {
+    expect(narrowToCommaTail("a,b,c,d", 0)).toEqual({
+      alreadyPicked: ["a", "b", "c"],
+      queryStart: 6,
+      query: "d",
+    });
+  });
+
+  it("ignores empty entries produced by consecutive commas", () => {
+    expect(narrowToCommaTail("a,,b,", 0)).toEqual({
+      alreadyPicked: ["a", "b"],
+      queryStart: 5,
+      query: "",
+    });
   });
 });
