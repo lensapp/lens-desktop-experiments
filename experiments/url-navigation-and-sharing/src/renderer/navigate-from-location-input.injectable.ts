@@ -15,6 +15,7 @@ import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectionToken } from "@lensapp/main-view";
 import { parseKubeApi } from "@lensapp/kube-api";
 import { isLoaded } from "@lensapp/loadable-utilities";
+import { when } from "mobx";
 import { type ParsedLocationBarInput, resolveClusterScopedSegments } from "./parse-location-bar-input";
 import { tabTypeForLabel } from "./label-for-tab-type";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
@@ -121,7 +122,13 @@ const navigateFromLocationInputInjectable = getInjectable({
           const singleConcreteNamespace =
             resolved.namespaces?.length === 1 && resolved.namespaces[0] !== "*" ? resolved.namespaces[0] : undefined;
 
-          const resourcesState = di.inject(kubeResourcesForKindInjectionToken.for(kind), cluster.id).get();
+          const resourcesComputed = di.inject(kubeResourcesForKindInjectionToken.for(kind), cluster.id);
+
+          if (singleConcreteNamespace === undefined) {
+            await when(() => isLoaded(resourcesComputed.get()), { timeout: 10_000 }).catch(() => undefined);
+          }
+
+          const resourcesState = resourcesComputed.get();
           const matchingResource = isLoaded(resourcesState)
             ? resourcesState.value.find((resource) => resource.metadata.name === resolved.resourceName)
             : undefined;
