@@ -83,14 +83,14 @@ const pluralNameFromResourcePath = (path: string | undefined): string | undefine
   return segments[segments.length - 1];
 };
 
-const singleNamespaceOrUndefined = (namespaces: readonly string[] | undefined): string | undefined => {
-  if (!namespaces || namespaces.length !== 1) {
+const namespacesForShareLink = (namespaces: readonly string[] | undefined): readonly string[] | undefined => {
+  if (!namespaces || namespaces.length === 0) {
     return undefined;
   }
 
-  const [only] = namespaces;
+  const filtered = namespaces.filter((name) => name !== allNamespacesSelectedValue);
 
-  return only === allNamespacesSelectedValue ? undefined : only;
+  return filtered.length > 0 ? filtered : undefined;
 };
 
 type LocationBarViewProps = {
@@ -405,7 +405,10 @@ const LocationBarInput = observer(
       () => (parsed?.resourcePluralName ? resolveKindOrUndefined(parsed.resourcePluralName) : undefined),
       [parsed?.resourcePluralName, resolveKindOrUndefined],
     );
-    const resolvedNamespace = parsed?.namespace && parsed.namespace !== "*" ? parsed.namespace : undefined;
+    const resolvedNamespace =
+      parsed?.namespaces && parsed.namespaces.length === 1 && parsed.namespaces[0] !== allNamespacesSelectedValue
+        ? parsed.namespaces[0]
+        : undefined;
 
     const segmentOneIsTerminal = useMemo(
       () => !value.slice(activeSegment.rangeEnd).includes(segmentSeparator),
@@ -844,7 +847,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
 type ClusterToolbarActionsProps = {
   readonly entity: Entity;
   readonly resourcePluralName: string | undefined;
-  readonly namespace: string | undefined;
+  readonly namespaces: readonly string[] | undefined;
   readonly resourceName: string | undefined;
   readonly resourceSelfLink: string | undefined;
 };
@@ -854,7 +857,7 @@ const copyStatusResetMs = 1500;
 const ClusterToolbarActions = ({
   entity,
   resourcePluralName,
-  namespace,
+  namespaces,
   resourceName,
   resourceSelfLink,
 }: ClusterToolbarActionsProps) => {
@@ -886,7 +889,7 @@ const ClusterToolbarActions = ({
     const text = formatShareLink({
       sourceSlug: result.info.sourceSlug,
       clusterSpecifier: result.info.clusterSpecifier,
-      namespace,
+      namespaces,
       resourcePluralName,
       resourceName,
     });
@@ -896,7 +899,7 @@ const ClusterToolbarActions = ({
   }, [
     resolveClusterShareInfo,
     entity,
-    namespace,
+    namespaces,
     resourcePluralName,
     resourceName,
     copyToClipboard,
@@ -982,7 +985,8 @@ const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: 
   });
 
   const resourcePluralName = pluralNameFromResourcePath(resourcePath);
-  const namespace = singleNamespaceOrUndefined(namespaces);
+  const objectNamespace = kubeObject?.metadata.namespace;
+  const shareNamespaces = objectNamespace ? [objectNamespace] : namespacesForShareLink(namespaces);
 
   return (
     <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
@@ -996,7 +1000,7 @@ const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: 
       <ClusterToolbarActions
         entity={entity}
         resourcePluralName={resourcePluralName}
-        namespace={namespace}
+        namespaces={shareNamespaces}
         resourceName={kubeObject?.metadata.name}
         resourceSelfLink={kubeObject?.metadata.selfLink}
       />

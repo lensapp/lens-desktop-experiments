@@ -116,10 +116,10 @@ const navigateFromShareLinkInjectable = getInjectable({
       const showTab = await di.inject(showPersistedKubeResourceTabInjectionToken.for(kind), clusterId);
       const tabId = await showTab();
 
-      if (parsed.namespace) {
+      if (parsed.namespaces && parsed.namespaces.length > 0) {
         const selectNamespaces = await di.inject(selectNamespacesInjectionToken, { clusterId, tabId });
 
-        selectNamespaces([parsed.namespace]);
+        selectNamespaces([...parsed.namespaces]);
       }
 
       if (parsed.resourceName) {
@@ -131,7 +131,7 @@ const navigateFromShareLinkInjectable = getInjectable({
           const selfLink = createSelfLink({
             apiVersion: parsedApi.apiVersionWithGroup,
             name: parsed.resourceName,
-            namespace: parsed.namespace,
+            namespace: parsed.namespaces?.[0],
           });
 
           const showDetails = await di.inject(showKubeObjectDetailsPanelInjectionToken, tabId);

@@ -4,7 +4,7 @@ describe("parseLocationBarInput", () => {
   it("given a full four-segment path, parses cluster, namespace, resource plural, and resource name", () => {
     expect(parseLocationBarInput("lc-staging1/bored-system/pods/nginx-abc")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "bored-system",
+      namespaces: ["bored-system"],
       resourcePluralName: "pods",
       resourceName: "nginx-abc",
     });
@@ -13,8 +13,26 @@ describe("parseLocationBarInput", () => {
   it("given a three-segment path without a resource name, parses cluster, namespace, and resource plural", () => {
     expect(parseLocationBarInput("lc-staging1/default/deployments")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "deployments",
+      resourceName: undefined,
+    });
+  });
+
+  it("given a comma-separated namespace segment, parses multiple namespaces", () => {
+    expect(parseLocationBarInput("lc-staging1/default,kube-system/pods")).toEqual({
+      clusterName: "lc-staging1",
+      namespaces: ["default", "kube-system"],
+      resourcePluralName: "pods",
+      resourceName: undefined,
+    });
+  });
+
+  it("trims whitespace between comma-separated namespaces", () => {
+    expect(parseLocationBarInput("lc-staging1/default , kube-system/pods")).toEqual({
+      clusterName: "lc-staging1",
+      namespaces: ["default", "kube-system"],
+      resourcePluralName: "pods",
       resourceName: undefined,
     });
   });
@@ -22,7 +40,7 @@ describe("parseLocationBarInput", () => {
   it("given a two-segment path, parses cluster and namespace only", () => {
     expect(parseLocationBarInput("lc-staging1/default")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: undefined,
       resourceName: undefined,
     });
@@ -31,7 +49,7 @@ describe("parseLocationBarInput", () => {
   it("given a single-segment path, parses the cluster name only", () => {
     expect(parseLocationBarInput("lc-staging1")).toEqual({
       clusterName: "lc-staging1",
-      namespace: undefined,
+      namespaces: undefined,
       resourcePluralName: undefined,
       resourceName: undefined,
     });
@@ -40,7 +58,7 @@ describe("parseLocationBarInput", () => {
   it("given whitespace around segments, trims each segment", () => {
     expect(parseLocationBarInput("  lc-staging1 / default / pods ")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: undefined,
     });
@@ -49,7 +67,7 @@ describe("parseLocationBarInput", () => {
   it("given leading and trailing slashes, ignores them", () => {
     expect(parseLocationBarInput("/lc-staging1/default/pods/")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: undefined,
     });
@@ -58,7 +76,7 @@ describe("parseLocationBarInput", () => {
   it("given empty segments between slashes, collapses them", () => {
     expect(parseLocationBarInput("lc-staging1//pods")).toEqual({
       clusterName: "lc-staging1",
-      namespace: "pods",
+      namespaces: ["pods"],
       resourcePluralName: undefined,
       resourceName: undefined,
     });
@@ -84,7 +102,7 @@ describe("parseLocationBarInput", () => {
     it("keeps the ARN-style cluster name intact when it is the entire input", () => {
       expect(parseLocationBarInput(arnClusterName, [arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespace: undefined,
+        namespaces: undefined,
         resourcePluralName: undefined,
         resourceName: undefined,
       });
@@ -93,9 +111,18 @@ describe("parseLocationBarInput", () => {
     it("splits namespace/plural/name off after the ARN cluster name", () => {
       expect(parseLocationBarInput(`${arnClusterName}/default/pods/nginx`, [arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespace: "default",
+        namespaces: ["default"],
         resourcePluralName: "pods",
         resourceName: "nginx",
+      });
+    });
+
+    it("splits comma-separated namespaces after the ARN cluster name", () => {
+      expect(parseLocationBarInput(`${arnClusterName}/default,kube-system/pods`, [arnClusterName])).toEqual({
+        clusterName: arnClusterName,
+        namespaces: ["default", "kube-system"],
+        resourcePluralName: "pods",
+        resourceName: undefined,
       });
     });
 
@@ -104,7 +131,7 @@ describe("parseLocationBarInput", () => {
 
       expect(parseLocationBarInput(`${arnClusterName}/default`, [shortName, arnClusterName])).toEqual({
         clusterName: arnClusterName,
-        namespace: "default",
+        namespaces: ["default"],
         resourcePluralName: undefined,
         resourceName: undefined,
       });
@@ -113,7 +140,7 @@ describe("parseLocationBarInput", () => {
     it("falls back to naive splitting when the input does not match any known cluster", () => {
       expect(parseLocationBarInput(`${arnClusterName}/default`, ["some-other-cluster"])).toEqual({
         clusterName: "arn:aws:eks:eu-west-1:841310725496:cluster",
-        namespace: "eksdemo1",
+        namespaces: ["eksdemo1"],
         resourcePluralName: "default",
         resourceName: undefined,
       });
@@ -128,7 +155,7 @@ describe("resolveLocationSegments", () => {
         resolveLocationSegments(
           {
             clusterName: "lc-staging1",
-            namespace: "nodes",
+            namespaces: ["nodes"],
             resourcePluralName: undefined,
             resourceName: undefined,
           },
@@ -136,7 +163,7 @@ describe("resolveLocationSegments", () => {
         ),
       ).toEqual({
         clusterName: "lc-staging1",
-        namespace: undefined,
+        namespaces: undefined,
         resourcePluralName: "nodes",
         resourceName: undefined,
       });
@@ -147,7 +174,7 @@ describe("resolveLocationSegments", () => {
         resolveLocationSegments(
           {
             clusterName: "lc-staging1",
-            namespace: "nodes",
+            namespaces: ["nodes"],
             resourcePluralName: "ip-10-0-0-1",
             resourceName: undefined,
           },
@@ -155,7 +182,7 @@ describe("resolveLocationSegments", () => {
         ),
       ).toEqual({
         clusterName: "lc-staging1",
-        namespace: undefined,
+        namespaces: undefined,
         resourcePluralName: "nodes",
         resourceName: "ip-10-0-0-1",
       });
@@ -166,7 +193,7 @@ describe("resolveLocationSegments", () => {
         resolveLocationSegments(
           {
             clusterName: "lc-staging1",
-            namespace: "pods",
+            namespaces: ["pods"],
             resourcePluralName: undefined,
             resourceName: undefined,
           },
@@ -174,8 +201,27 @@ describe("resolveLocationSegments", () => {
         ),
       ).toEqual({
         clusterName: "lc-staging1",
-        namespace: undefined,
+        namespaces: undefined,
         resourcePluralName: "pods",
+        resourceName: undefined,
+      });
+    });
+
+    it("does not shift when multiple namespaces are parsed (they cannot collectively be a misread plural)", () => {
+      expect(
+        resolveLocationSegments(
+          {
+            clusterName: "lc-staging1",
+            namespaces: ["pods", "extra"],
+            resourcePluralName: undefined,
+            resourceName: undefined,
+          },
+          canResolvePlural,
+        ),
+      ).toEqual({
+        clusterName: "lc-staging1",
+        namespaces: ["pods", "extra"],
+        resourcePluralName: undefined,
         resourceName: undefined,
       });
     });
@@ -186,7 +232,7 @@ describe("resolveLocationSegments", () => {
       resolveLocationSegments(
         {
           clusterName: "lc-staging1",
-          namespace: "default",
+          namespaces: ["default"],
           resourcePluralName: "pods",
           resourceName: undefined,
         },
@@ -194,7 +240,7 @@ describe("resolveLocationSegments", () => {
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: undefined,
     });
@@ -205,7 +251,7 @@ describe("resolveLocationSegments", () => {
       resolveLocationSegments(
         {
           clusterName: "lc-staging1",
-          namespace: "default",
+          namespaces: ["default"],
           resourcePluralName: "pods",
           resourceName: "nginx-abc",
         },
@@ -213,7 +259,7 @@ describe("resolveLocationSegments", () => {
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespace: "default",
+      namespaces: ["default"],
       resourcePluralName: "pods",
       resourceName: "nginx-abc",
     });
@@ -224,7 +270,7 @@ describe("resolveLocationSegments", () => {
       resolveLocationSegments(
         {
           clusterName: "lc-staging1",
-          namespace: "bogus",
+          namespaces: ["bogus"],
           resourcePluralName: "also-bogus",
           resourceName: undefined,
         },
@@ -232,7 +278,7 @@ describe("resolveLocationSegments", () => {
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespace: "bogus",
+      namespaces: ["bogus"],
       resourcePluralName: "also-bogus",
       resourceName: undefined,
     });
@@ -243,7 +289,7 @@ describe("resolveLocationSegments", () => {
       resolveLocationSegments(
         {
           clusterName: "lc-staging1",
-          namespace: "monitoring",
+          namespaces: ["monitoring"],
           resourcePluralName: undefined,
           resourceName: undefined,
         },
@@ -251,7 +297,7 @@ describe("resolveLocationSegments", () => {
       ),
     ).toEqual({
       clusterName: "lc-staging1",
-      namespace: "monitoring",
+      namespaces: ["monitoring"],
       resourcePluralName: undefined,
       resourceName: undefined,
     });
