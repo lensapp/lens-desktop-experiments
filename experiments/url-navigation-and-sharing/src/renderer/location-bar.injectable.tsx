@@ -24,7 +24,7 @@ import type { Entity } from "@lensapp/entity-aggregator";
 import { observer } from "mobx-react";
 import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { synthesizeClusterBreadcrumb } from "./synthesize-breadcrumb";
+import { synthesizeClusterBreadcrumb, synthesizeEditableClusterPath } from "./synthesize-breadcrumb";
 import { labelForTabType } from "./label-for-tab-type";
 import { parseLocationBarInput } from "./parse-location-bar-input";
 import { formatShareLink, isShareLink, parseShareLink } from "./parse-share-link";
@@ -321,7 +321,11 @@ const ResourceNameSuggestions = observer(
 const NamespaceSuggestions = observer(
   ({ anchorRef, clusterId, query, listboxId, activeIndex, onPick, onSuggestionsChange }: NamespaceSuggestionsProps) => {
     const namespaces = useSyncInject(allNamespacesInjectionToken, clusterId).get();
-    const suggestions = useMemo(() => suggestNamespaces(namespaces, query), [namespaces, query]);
+    const namespacesWithWildcard = useMemo(() => [allNamespacesSelectedValue, ...namespaces], [namespaces]);
+    const suggestions = useMemo(
+      () => suggestNamespaces(namespacesWithWildcard, query),
+      [namespacesWithWildcard, query],
+    );
 
     useEffect(() => {
       onSuggestionsChange(suggestions);
@@ -728,9 +732,10 @@ const LocationBarInput = observer(
 
 type EditableLocationBarProps = {
   readonly segments: readonly string[];
+  readonly editableSegments?: readonly string[];
 };
 
-const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) => {
+const EditableLocationBar = observer(({ segments, editableSegments }: EditableLocationBarProps) => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
   const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
@@ -827,7 +832,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
   if (isEditing) {
     return (
       <LocationBarInput
-        initialValue={segments.join(segmentSeparator)}
+        initialValue={(editableSegments ?? segments).join(segmentSeparator)}
         errorMessage={errorMessage}
         onSubmit={submitEdit}
         onFinish={finishEdit}
@@ -972,12 +977,15 @@ const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: 
     ?.get();
   const kubeObject = useInjectAsReactive(currentKubeObjectInDetailsOrUndefinedInjectionToken, tabId).get()?.get();
 
-  const segments = synthesizeClusterBreadcrumb({
+  const breadcrumbInput = {
     clusterName: displayName ?? entity.metadata.name,
     namespaces,
     resourcePath,
     resourceName: kubeObject?.metadata.name,
-  });
+  };
+
+  const segments = synthesizeClusterBreadcrumb(breadcrumbInput);
+  const editableSegments = synthesizeEditableClusterPath(breadcrumbInput);
 
   const resourcePluralName = pluralNameFromResourcePath(resourcePath);
   const objectNamespace = kubeObject?.metadata.namespace;
@@ -990,7 +998,7 @@ const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourcePath }: 
         $overflow="hidden"
         $style={{ minWidth: 0, flex: 1 }}
       >
-        <EditableLocationBar segments={segments} />
+        <EditableLocationBar segments={segments} editableSegments={editableSegments} />
       </Div>
       <ClusterToolbarActions
         entity={entity}
