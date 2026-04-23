@@ -1,5 +1,10 @@
 import type { IsKindNamespaced } from "./parse-location-bar-input";
 
+// TODO(upstream): promote as `isKindNamespacedInjectionToken.for(kind)` on
+// `@lensapp/kube-resource`, backed by authoritative per-kind metadata.
+// The hardcoded plural list below is a stopgap that drifts as the upstream
+// kind registry changes.
+
 /**
  * Core Kubernetes kinds that are cluster-scoped. Checked against the plural
  * name typed in the location bar so we can decide whether the segment that

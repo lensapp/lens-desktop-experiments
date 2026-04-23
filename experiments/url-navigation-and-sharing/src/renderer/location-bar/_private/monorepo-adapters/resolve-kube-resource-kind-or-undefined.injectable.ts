@@ -7,10 +7,12 @@ export const resolveKubeResourceKindOrUndefinedInjectionToken = getInjectionToke
   id: "resolve-kube-resource-kind-or-undefined",
 });
 
-// `@lensapp/kube-resource` exposes only `kubeResourceKindByPluralNameInjectionToken`,
-// which throws when the plural isn't registered. Until a `...OrUndefined` variant is
-// contributed upstream, this helper localises the exceptions-as-existence-probe
-// hack to a single injectable — see .knowledge/rules.md §2.
+// TODO(upstream): promote this as `kubeResourceKindByPluralNameOrUndefinedInjectionToken`
+// in `@lensapp/kube-resource`, next to the throwing `kubeResourceKindByPluralNameInjectionToken`.
+// Every autocomplete/validation consumer that takes unvetted plural names from
+// the user hits this same wall, and an exceptions-as-existence-probe is the
+// wrong contract. Once upstream ships, delete this adapter and consume the
+// token directly.
 const resolveKubeResourceKindOrUndefinedInjectable = getInjectable({
   id: "url-navigation-and-sharing-resolve-kube-resource-kind-or-undefined",
 
