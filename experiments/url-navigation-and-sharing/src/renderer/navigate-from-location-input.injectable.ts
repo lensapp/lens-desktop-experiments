@@ -122,18 +122,32 @@ const navigateFromLocationInputInjectable = getInjectable({
           const singleConcreteNamespace =
             resolved.namespaces?.length === 1 && resolved.namespaces[0] !== "*" ? resolved.namespaces[0] : undefined;
 
-          const resourcesComputed = di.inject(kubeResourcesForKindInjectionToken.for(kind), cluster.id);
+          let namespaceFromLoadedSample: string | undefined;
 
           if (singleConcreteNamespace === undefined) {
-            await when(() => isLoaded(resourcesComputed.get()), { timeout: 10_000 }).catch(() => undefined);
-          }
+            const resourcesComputed = di.inject(kubeResourcesForKindInjectionToken.for(kind), cluster.id);
 
-          const resourcesState = resourcesComputed.get();
-          const matchingResource = isLoaded(resourcesState)
-            ? resourcesState.value.find((resource) => resource.metadata.name === resolved.resourceName)
-            : undefined;
-          const namespaceFromLoadedSample = (matchingResource?.metadata as { readonly namespace?: string } | undefined)
-            ?.namespace;
+            // Capture the matching sample *inside* the `when` predicate — once
+            // `when` disposes, the resource map's last observer may fall away
+            // and `onBecomeUnobserved` clears it synchronously, so any read
+            // after the await would see an empty loading state.
+            await when(
+              () => {
+                const state = resourcesComputed.get();
+
+                if (!isLoaded(state)) {
+                  return false;
+                }
+
+                const match = state.value.find((resource) => resource.metadata.name === resolved.resourceName);
+
+                namespaceFromLoadedSample = (match?.metadata as { readonly namespace?: string } | undefined)?.namespace;
+
+                return true;
+              },
+              { timeout: 10_000 },
+            ).catch(() => undefined);
+          }
 
           const selfLink = createSelfLink({
             apiVersion: parsedApi.apiVersionWithGroup,
