@@ -30,6 +30,8 @@ export const ClusterToolbarActions = (props: ClusterToolbarActionArgs) => {
   const copyTitle =
     status === "copied" ? "Copied to clipboard" : "Copy a link that can be pasted into another Lens Desktop";
 
+  const systemShareSupported = (props.namespaces?.length ?? 0) <= 1;
+
   return (
     <Div $flex={{ direction: "horizontal", verticalAlign: "center", gap: "xxs" }} $padding={{ horizontal: "xs" }}>
       <Button
@@ -42,7 +44,7 @@ export const ClusterToolbarActions = (props: ClusterToolbarActionArgs) => {
       >
         {status === "copied" ? <CheckIcon $size="s" /> : <ContentCopyIcon $size="s" />}
       </Button>
-      {model.isMac && (
+      {model.isMac && systemShareSupported && (
         <Button
           type="button"
           onClick={model.openSystemShareMenu}
