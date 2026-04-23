@@ -8,6 +8,7 @@ import { useCallback } from "react";
 import { resolveClusterShareInfoInjectionToken } from "./cluster-share-info.injectable";
 import { openShareMenuInjectionToken } from "./open-share-menu.injectable";
 import { formatShareLink } from "../_shared/parse-share-link";
+import sendLocationBarTelemetryInjectable from "../telemetry/send-location-bar-telemetry.injectable";
 
 const kubeDetailsUrlParamName = "kube-details";
 
@@ -30,6 +31,7 @@ export const useClusterToolbarActionsModel = (args: ClusterToolbarActionArgs): C
   const openShareMenu = useSyncInject(openShareMenuInjectionToken);
   const copyToClipboard = useSyncInject(copyToClipboardInjectionToken);
   const showErrorNotification = useSyncInject(showErrorNotificationInjectionToken);
+  const sendTelemetry = useSyncInject(sendLocationBarTelemetryInjectable);
   const isMac = useSyncInject(isMacInjectable);
 
   const { entity, resourcePluralName, namespaces, resourceName, resourceSelfLink } = args;
@@ -51,6 +53,14 @@ export const useClusterToolbarActionsModel = (args: ClusterToolbarActionArgs): C
     });
 
     copyToClipboard(text);
+    sendTelemetry({
+      action: "share-link-copied",
+      params: {
+        hasResourceType: resourcePluralName !== undefined,
+        namespaceCount: namespaces?.length ?? 0,
+        hasResourceName: resourceName !== undefined,
+      },
+    });
     return true;
   }, [
     resolveClusterShareInfo,
@@ -60,6 +70,7 @@ export const useClusterToolbarActionsModel = (args: ClusterToolbarActionArgs): C
     resourceName,
     copyToClipboard,
     showErrorNotification,
+    sendTelemetry,
   ]);
 
   const openSystemShareMenu = useCallback(async (): Promise<void> => {
@@ -86,7 +97,23 @@ export const useClusterToolbarActionsModel = (args: ClusterToolbarActionArgs): C
     });
 
     openShareMenu(url);
-  }, [resolveClusterShareInfo, entity, resourcePluralName, resourceSelfLink, openShareMenu, showErrorNotification]);
+    sendTelemetry({
+      action: "system-share-opened",
+      params: {
+        hasResourceType: resourcePluralName !== undefined,
+        hasResourceName: resourceName !== undefined,
+      },
+    });
+  }, [
+    resolveClusterShareInfo,
+    entity,
+    resourcePluralName,
+    resourceName,
+    resourceSelfLink,
+    openShareMenu,
+    showErrorNotification,
+    sendTelemetry,
+  ]);
 
   return { isMac, copyShareLink, openSystemShareMenu };
 };

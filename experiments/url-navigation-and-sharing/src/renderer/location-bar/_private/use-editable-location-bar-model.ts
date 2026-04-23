@@ -6,6 +6,21 @@ import { navigateFromLocationInputInjectionToken } from "./navigation/navigate-f
 import { navigateFromShareLinkInjectionToken } from "./navigation/navigate-from-share-link.injectable";
 import { parseLocationBarInput } from "./_shared/parse-location-bar-input";
 import { isShareLink, parseShareLink } from "./_shared/parse-share-link";
+import { connectionTypeForSlug } from "./_shared/source-slug";
+import sendLocationBarTelemetryInjectable from "./telemetry/send-location-bar-telemetry.injectable";
+
+const allNamespacesSelectedValue = "*";
+
+const navigationTargetShape = (
+  namespaces: readonly string[] | undefined,
+  resourcePluralName: string | undefined,
+  resourceName: string | undefined,
+) => ({
+  hasResourceType: resourcePluralName !== undefined,
+  namespaceCount: namespaces?.length ?? 0,
+  isAllNamespaces: namespaces?.some((name) => name === allNamespacesSelectedValue) ?? false,
+  hasResourceName: resourceName !== undefined,
+});
 
 export type EditableLocationBarModel = {
   readonly isEditing: boolean;
@@ -19,6 +34,7 @@ export type EditableLocationBarModel = {
 export const useEditableLocationBarModel = (): EditableLocationBarModel => {
   const navigate = useSyncInject(navigateFromLocationInputInjectionToken);
   const navigateFromShareLink = useSyncInject(navigateFromShareLinkInjectionToken);
+  const sendTelemetry = useSyncInject(sendLocationBarTelemetryInjectable);
   const clusterDescriptors = useSyncInject(clusterDescriptorsInjectable).get();
   const clusterLookupNames = useMemo(() => {
     const seen = new Set<string>();
@@ -41,7 +57,8 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
   const beginEdit = useCallback(() => {
     setErrorMessage(undefined);
     setIsEditing(true);
-  }, []);
+    sendTelemetry({ action: "edit-opened", params: { trigger: "click" } });
+  }, [sendTelemetry]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -51,13 +68,14 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
         event.preventDefault();
         setErrorMessage(undefined);
         setIsEditing(true);
+        sendTelemetry({ action: "edit-opened", params: { trigger: "shortcut" } });
       }
     };
 
     window.addEventListener("keydown", handler);
 
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [sendTelemetry]);
 
   const cancelEdit = useCallback(() => {
     setIsEditing(false);
@@ -76,6 +94,10 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
 
         if (!parsed) {
           setErrorMessage("Malformed share link");
+          sendTelemetry({
+            action: "navigation-failed",
+            params: { source: "share-link", kind: "malformed" },
+          });
           return false;
         }
 
@@ -83,10 +105,21 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
 
         if (failure) {
           setErrorMessage(shareLinkFailureMessage(failure));
+          sendTelemetry({
+            action: "navigation-failed",
+            params: { source: "share-link", kind: failure.kind },
+          });
           return false;
         }
 
         setErrorMessage(undefined);
+        sendTelemetry({
+          action: "navigated-from-share-link",
+          params: {
+            connectionType: connectionTypeForSlug(parsed.sourceSlug),
+            ...navigationTargetShape(parsed.namespaces, parsed.resourcePluralName, parsed.resourceName),
+          },
+        });
         return true;
       }
 
@@ -94,6 +127,10 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
 
       if (!parsed) {
         setErrorMessage("Enter a path like cluster/pods/namespace");
+        sendTelemetry({
+          action: "navigation-failed",
+          params: { source: "input", kind: "unparseable" },
+        });
         return false;
       }
 
@@ -101,13 +138,21 @@ export const useEditableLocationBarModel = (): EditableLocationBarModel => {
 
       if (failure) {
         setErrorMessage(failureMessage(failure));
+        sendTelemetry({
+          action: "navigation-failed",
+          params: { source: "input", kind: failure.kind },
+        });
         return false;
       }
 
       setErrorMessage(undefined);
+      sendTelemetry({
+        action: "navigated-from-input",
+        params: navigationTargetShape(parsed.namespaces, parsed.resourcePluralName, parsed.resourceName),
+      });
       return true;
     },
-    [navigate, navigateFromShareLink, clusterLookupNames],
+    [navigate, navigateFromShareLink, clusterLookupNames, sendTelemetry],
   );
 
   return { isEditing, errorMessage, beginEdit, cancelEdit, finishEdit, submitEdit };
