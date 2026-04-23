@@ -38,6 +38,7 @@ import {
 } from "./location-bar-suggestions";
 import { registeredResourcePluralsInjectionToken } from "./registered-resource-plurals.injectable";
 import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
+import { isKnownClusterScopedPlural } from "./is-plural-namespaced";
 import {
   type NavigationFailure,
   navigateFromLocationInputInjectionToken,
@@ -405,15 +406,12 @@ const LocationBarInput = observer(
       () => (parsed?.resourcePluralName ? resolveKindOrUndefined(parsed.resourcePluralName) : undefined),
       [parsed?.resourcePluralName, resolveKindOrUndefined],
     );
+    const resolvedIsClusterScoped =
+      parsed?.resourcePluralName !== undefined && isKnownClusterScopedPlural(parsed.resourcePluralName);
     const resolvedNamespace =
       parsed?.namespaces && parsed.namespaces.length === 1 && parsed.namespaces[0] !== allNamespacesSelectedValue
         ? parsed.namespaces[0]
         : undefined;
-
-    const segmentOneIsTerminal = useMemo(
-      () => !value.slice(activeSegment.rangeEnd).includes(segmentSeparator),
-      [value, activeSegment.rangeEnd],
-    );
 
     const staticSuggestions = useMemo<readonly Suggestion[]>(() => {
       if (suppressDropdown) {
@@ -424,29 +422,25 @@ const LocationBarInput = observer(
         return suggestClusters(clusterDisplayNames, activeSegment.text);
       }
 
-      if (activeSegment.index === 1 && segmentOneIsTerminal) {
-        return suggestResourcePlurals(registeredPlurals, activeSegment.text);
-      }
-
-      if (activeSegment.index === 2) {
+      if (activeSegment.index === 1) {
         return suggestResourcePlurals(registeredPlurals, activeSegment.text);
       }
 
       return [];
-    }, [
-      suppressDropdown,
-      activeSegment.index,
-      activeSegment.text,
-      segmentOneIsTerminal,
-      clusterDisplayNames,
-      registeredPlurals,
-    ]);
+    }, [suppressDropdown, activeSegment.index, activeSegment.text, clusterDisplayNames, registeredPlurals]);
 
     const showNamespaceDropdown =
-      !suppressDropdown && activeSegment.index === 1 && !segmentOneIsTerminal && resolvedClusterId !== undefined;
+      !suppressDropdown &&
+      activeSegment.index === 2 &&
+      !resolvedIsClusterScoped &&
+      resolvedClusterId !== undefined &&
+      resolvedKind !== undefined;
 
     const showResourceNameDropdown =
-      !suppressDropdown && activeSegment.index === 3 && resolvedClusterId !== undefined && resolvedKind !== undefined;
+      !suppressDropdown &&
+      resolvedClusterId !== undefined &&
+      resolvedKind !== undefined &&
+      ((activeSegment.index === 2 && resolvedIsClusterScoped) || activeSegment.index === 3);
 
     const activeSuggestions: readonly Suggestion[] = showResourceNameDropdown
       ? resourceNameSuggestions
@@ -574,7 +568,7 @@ const LocationBarInput = observer(
         event.preventDefault();
 
         const pickable = dropdownIsOpen ? activeSuggestions[activeIndex] : undefined;
-        const isLastSegment = activeSegment.index >= 3;
+        const isLastSegment = activeSegment.index >= 3 || (activeSegment.index === 2 && resolvedIsClusterScoped);
 
         let submittedValue = value;
         let caretAfterAccept = caret;
@@ -632,6 +626,7 @@ const LocationBarInput = observer(
         activeSegment.index,
         activeSegment.rangeStart,
         activeSegment.rangeEnd,
+        resolvedIsClusterScoped,
         caret,
         value,
         onSubmit,
@@ -703,7 +698,7 @@ const LocationBarInput = observer(
               anchorRef={inputRef}
               clusterId={resolvedClusterId as string}
               kind={resolvedKind as KubeResourceKind}
-              namespace={resolvedNamespace}
+              namespace={resolvedIsClusterScoped ? undefined : resolvedNamespace}
               query={activeSegment.text}
               listboxId={listboxId}
               activeIndex={activeIndex}
@@ -812,7 +807,7 @@ const EditableLocationBar = observer(({ segments }: EditableLocationBarProps) =>
       const parsed = parseLocationBarInput(value, clusterLookupNames);
 
       if (!parsed) {
-        setErrorMessage("Enter a path like cluster/namespace/pods");
+        setErrorMessage("Enter a path like cluster/pods/namespace");
         return false;
       }
 

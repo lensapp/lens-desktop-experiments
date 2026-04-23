@@ -1,8 +1,8 @@
 export type ParsedShareLink = {
   readonly sourceSlug: string;
   readonly clusterSpecifier: string;
-  readonly namespaces: readonly string[] | undefined;
   readonly resourcePluralName: string | undefined;
+  readonly namespaces: readonly string[] | undefined;
   readonly resourceName: string | undefined;
 };
 
@@ -48,7 +48,7 @@ export const parseShareLink = (input: string): ParsedShareLink | undefined => {
     return undefined;
   }
 
-  const [clusterSpecifier, namespace, resourcePluralName, resourceName] = rest
+  const [clusterSpecifier, resourcePluralName, namespace, resourceName] = rest
     .split("/")
     .map((segment) => segment.trim());
 
@@ -59,15 +59,15 @@ export const parseShareLink = (input: string): ParsedShareLink | undefined => {
   return {
     sourceSlug,
     clusterSpecifier,
-    namespaces: splitNamespaces(namespace || undefined),
     resourcePluralName: resourcePluralName || undefined,
+    namespaces: splitNamespaces(namespace || undefined),
     resourceName: resourceName || undefined,
   };
 };
 
 export const formatShareLink = (parsed: ParsedShareLink): string => {
   const namespacesSegment = parsed.namespaces?.join(namespaceSeparator);
-  const path = [parsed.clusterSpecifier, namespacesSegment, parsed.resourcePluralName, parsed.resourceName]
+  const path = [parsed.clusterSpecifier, parsed.resourcePluralName, namespacesSegment, parsed.resourceName]
     .filter((segment): segment is string => Boolean(segment))
     .join("/");
 
