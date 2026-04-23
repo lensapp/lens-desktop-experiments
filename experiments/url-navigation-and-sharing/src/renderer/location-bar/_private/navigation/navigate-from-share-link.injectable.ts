@@ -20,11 +20,11 @@ import { selectNamespacesInjectionToken } from "@lensapp/selecting-namespaces";
 import { parseKubeApi } from "@lensapp/kube-api";
 import { isLoaded } from "@lensapp/loadable-utilities";
 import { when } from "mobx";
-import { connectionTypeForSlug } from "./source-slug";
-import type { ParsedShareLink } from "./parse-share-link";
-import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
-import { resolveClusterScopedSegments } from "./parse-location-bar-input";
-import { makeIsKindNamespaced } from "./is-plural-namespaced";
+import { connectionTypeForSlug } from "../_shared/source-slug";
+import type { ParsedShareLink } from "../_shared/parse-share-link";
+import { resolveKubeResourceKindOrUndefinedInjectionToken } from "../monorepo-adapters/resolve-kube-resource-kind-or-undefined.injectable";
+import { resolveClusterScopedSegments } from "../_shared/parse-location-bar-input";
+import { makeIsKindNamespaced } from "../_shared/is-plural-namespaced";
 
 export type ShareLinkNavigationFailure =
   | {

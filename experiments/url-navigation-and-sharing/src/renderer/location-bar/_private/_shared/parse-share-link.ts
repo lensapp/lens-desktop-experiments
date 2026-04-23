@@ -1,3 +1,9 @@
+// TODO(upstream): promote `isShareLink` / `parseShareLink` / `formatShareLink`
+// to `@lensapp/share-common` next to `getCustomProtocolUrl()`. The monorepo
+// already owns the forward direction of this URL grammar; the inverse belongs
+// next to it so every deep-link handler (main-process URL routing, telemetry,
+// tests) uses the same parser.
+
 export type ParsedShareLink = {
   readonly sourceSlug: string;
   readonly clusterSpecifier: string;

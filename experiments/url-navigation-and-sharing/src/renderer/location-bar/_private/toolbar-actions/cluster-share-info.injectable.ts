@@ -5,7 +5,7 @@ import { getPredictableIdInjectionToken } from "@lensapp/utility-feature";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";
 import { isSpacesClusterEntity } from "@lensapp/lens-spaces";
 import type { Entity } from "@lensapp/entity-aggregator";
-import { slugifyNavigatorName, teamworkSourceSlug } from "./source-slug";
+import { slugifyNavigatorName, teamworkSourceSlug } from "../_shared/source-slug";
 
 export type ClusterShareInfo = {
   readonly sourceSlug: string;

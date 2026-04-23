@@ -3,6 +3,12 @@ import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { type IComputedValue, computed } from "mobx";
 
+// TODO(upstream): promote `ClusterDescriptor` + this computed list to
+// `@lensapp/cluster-common` as `clusterDescriptorsInjectionToken`. Every
+// "pick a cluster" UI (command bar, share dialog, catalog filters,
+// preferences) wants the same `{ id, name, displayName }` projection —
+// composing it from the two monorepo tokens belongs in the same package
+// that owns those tokens.
 export type ClusterDescriptor = {
   readonly id: string;
   readonly name: string;

@@ -1,6 +1,9 @@
 import { getInjectable, getInjectionToken } from "@lensapp/injectable";
 import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
-import { clusterDescriptorsInjectable, findClusterByDisplayNameOrName } from "./cluster-descriptors.injectable";
+import {
+  clusterDescriptorsInjectable,
+  findClusterByDisplayNameOrName,
+} from "../monorepo-adapters/cluster-descriptors.injectable";
 import {
   createSelfLinkForKubeResourceInjectionToken,
   kubeResourcesForKindInjectionToken,
@@ -16,10 +19,10 @@ import { createTabInjectionToken, findTabIdInjectionToken, selectTabByIdInjectio
 import { parseKubeApi } from "@lensapp/kube-api";
 import { isLoaded } from "@lensapp/loadable-utilities";
 import { when } from "mobx";
-import { type ParsedLocationBarInput, resolveClusterScopedSegments } from "./parse-location-bar-input";
-import { tabTypeForLabel } from "./label-for-tab-type";
-import { resolveKubeResourceKindOrUndefinedInjectionToken } from "./resolve-kube-resource-kind-or-undefined.injectable";
-import { makeIsKindNamespaced } from "./is-plural-namespaced";
+import { type ParsedLocationBarInput, resolveClusterScopedSegments } from "../_shared/parse-location-bar-input";
+import { tabTypeForLabel } from "../_shared/label-for-tab-type";
+import { resolveKubeResourceKindOrUndefinedInjectionToken } from "../monorepo-adapters/resolve-kube-resource-kind-or-undefined.injectable";
+import { makeIsKindNamespaced } from "../_shared/is-plural-namespaced";
 
 export type NavigationFailure =
   | { readonly kind: "cluster-not-found"; readonly clusterName: string }
