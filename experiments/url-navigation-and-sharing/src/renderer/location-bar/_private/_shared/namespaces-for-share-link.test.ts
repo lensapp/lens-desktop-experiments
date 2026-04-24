@@ -1,23 +1,4 @@
-import { buildShareNamespaces, namespacesForShareLink } from "./namespaces-for-share-link";
-
-describe("namespacesForShareLink", () => {
-  it("returns undefined when there are no namespaces", () => {
-    expect(namespacesForShareLink(undefined)).toBeUndefined();
-    expect(namespacesForShareLink([])).toBeUndefined();
-  });
-
-  it("returns undefined when only the wildcard is selected", () => {
-    expect(namespacesForShareLink(["*"])).toBeUndefined();
-  });
-
-  it("strips the wildcard from a mixed selection", () => {
-    expect(namespacesForShareLink(["*", "cert-manager"])).toEqual(["cert-manager"]);
-  });
-
-  it("preserves a multi-namespace selection", () => {
-    expect(namespacesForShareLink(["cert-manager", "kube-system"])).toEqual(["cert-manager", "kube-system"]);
-  });
-});
+import { buildShareNamespaces } from "./namespaces-for-share-link";
 
 describe("buildShareNamespaces", () => {
   it("returns undefined when both filter and object namespace are absent", () => {
@@ -46,5 +27,13 @@ describe("buildShareNamespaces", () => {
       "kube-system",
       "default",
     ]);
+  });
+
+  it("preserves the all-namespaces wildcard as the whole share namespace segment", () => {
+    expect(buildShareNamespaces(["*"], undefined)).toEqual(["*"]);
+  });
+
+  it("keeps the wildcard alone even when a detail panel is open — * already covers the object's namespace", () => {
+    expect(buildShareNamespaces(["*"], "cert-manager")).toEqual(["*"]);
   });
 });

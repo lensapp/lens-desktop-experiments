@@ -10,7 +10,8 @@ import { useInjectAsReactive } from "@lensapp/use-inject-as-reactive";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { observer } from "mobx-react";
 import { synthesizeClusterBreadcrumb, synthesizeEditableClusterPath } from "./_shared/synthesize-breadcrumb";
-import { buildShareNamespaces, namespacesForShareLink } from "./_shared/namespaces-for-share-link";
+import { buildShareNamespaces } from "./_shared/namespaces-for-share-link";
+import { isKnownClusterScopedPlural } from "./_shared/is-plural-namespaced";
 import { pluralNameFromResourcePath } from "./_shared/plural-name-from-resource-path";
 import { EditableLocationBar } from "./editable-location-bar";
 import { ClusterToolbarActions } from "./toolbar-actions/cluster-toolbar-actions";
@@ -48,7 +49,8 @@ export const ClusterBreadcrumb = observer(({ tabId, clusterId, entity, resourceP
 
   const resourcePluralName = pluralNameFromResourcePath(resourcePath);
   const objectNamespace = kubeObject?.metadata.namespace;
-  const shareNamespaces = buildShareNamespaces(namespacesForShareLink(namespaces), objectNamespace);
+  const resourceIsClusterScoped = resourcePluralName !== undefined && isKnownClusterScopedPlural(resourcePluralName);
+  const shareNamespaces = resourceIsClusterScoped ? undefined : buildShareNamespaces(namespaces, objectNamespace);
 
   return (
     <Div $flex={{ direction: "horizontal", verticalAlign: "center" }} $overflow="hidden" $style={{ minWidth: 0 }}>
