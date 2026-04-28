@@ -17,8 +17,6 @@ describe("command-palette-commands-for-toggling-of-feature-flags", () => {
   beforeEach(() => {
     di = createContainer("irrelevant");
 
-    di.preventSideEffects();
-
     registerFeature(di, featureTogglerFeature);
 
     runAllTestUtilityRunnables(di);
