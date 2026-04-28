@@ -1,10 +1,4 @@
-import {
-  createInstantiationTargetDecorator,
-  getInjectable,
-  getInjectableBunch,
-  type Injectable,
-  instantiationDecoratorToken,
-} from "@lensapp/injectable";
+import { getInjectable2, getInjectableBunch, type Injectable, instantiationDecoratorToken } from "@lensapp/injectable";
 
 import {
   getMessageChannel,
@@ -16,28 +10,26 @@ export const withChildDiKludgeBunch = <T>(toBeKludged: Injectable<(arg: T) => vo
   const kludgeChannel = getMessageChannel<T>(`multi-di-kludge-channel-for-${toBeKludged.id}`);
 
   return getInjectableBunch({
-    kludgeSender: getInjectable({
+    kludgeSender: getInjectable2({
       id: `with-intercepted-sending-in-kludge-channel-for-${toBeKludged.id}`,
-
-      instantiate: () =>
-        createInstantiationTargetDecorator({
-          target: toBeKludged,
-          decorate:
-            (
-              // Deliberately omit running the decorated function...
-              _toBeDecorated,
-            ) =>
-            (senderDi) => {
-              const sendMessageToChannel = senderDi.inject(sendMessageToChannelInjectionToken);
-
-              // ...instead, send the message in the kludge channel, to be run by a listener
-              return (message) => {
-                sendMessageToChannel(kludgeChannel, message);
-              };
-            },
-        }),
-      injectionToken: instantiationDecoratorToken,
+      injectionToken: instantiationDecoratorToken.for(toBeKludged),
       decorable: false,
+
+      instantiate:
+        () =>
+        () =>
+        (
+          // Deliberately omit running the decorated function...
+          _toBeDecorated,
+        ) =>
+        (senderDi) => {
+          const sendMessageToChannel = senderDi.inject(sendMessageToChannelInjectionToken);
+
+          // ...instead, send the message in the kludge channel, to be run by a listener
+          return (message: T) => {
+            sendMessageToChannel(kludgeChannel, message);
+          };
+        },
     }),
 
     kludgeListener: getMessageChannelListenerInjectable({

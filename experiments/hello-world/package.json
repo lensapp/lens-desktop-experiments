@@ -17,17 +17,17 @@
   "main": "./dist/index.js",
   "peerDependencies": {
     "@lensapp/feature-core": "^7.2.0",
-    "@lensapp/injectable": "^21.0.1",
+    "@lensapp/injectable": "^22.1.0",
     "@lensapp/messaging": "^4.0.0",
-    "@lensapp/status-bar": "^2.0.0",
+    "@lensapp/status-bar": "^3.0.0",
     "@lensapp/utilities": "^6.0.0",
     "react": "^19.0.0"
   },
   "devDependencies": {
     "@lensapp/feature-core": "^7.2.0",
-    "@lensapp/injectable": "^21.0.1",
+    "@lensapp/injectable": "^22.1.0",
     "@lensapp/messaging": "^4.0.0",
-    "@lensapp/status-bar": "^2.0.0",
+    "@lensapp/status-bar": "^3.0.0",
     "@lensapp/utilities": "^6.0.0",
     "@types/react": "^19.0.0",
     "react": "^19.0.0",
