@@ -54,7 +54,7 @@ Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The workflow 
   - Served via CloudFront in the LensLabs AWS account. New Lens Desktop clients fetch from here.
 - **GitHub Releases (fallback):**
   - Canonical release for the tag with all artifacts attached. Human-browsable; clients fall back to this if S3/CloudFront is unreachable.
-  - Floating pointer release named `latest-<lensVersion>`, marked prerelease, with a single `pointer.json` asset. Same shape as the S3 pointer. Reachable at `https://github.com/lensapp/lens-desktop-experiments/releases/download/latest-<lensVersion>/pointer.json` — predictable URL, no API call required. The workflow deletes and recreates this release on every publish.
+  - Floating pointer release named `latest-<lensVersion>`, marked prerelease, with a single `pointer.json` asset. Same shape as the S3 pointer. Reachable at `https://github.com/lensapp/lens-desktop-experiments/releases/download/latest-<lensVersion>/pointer.json` — predictable URL, no API call required. The release + tag are created once per Lens version; subsequent publishes only replace the `pointer.json` asset (`gh release upload --clobber`), so the tag itself never moves.
   - The whole GitHub side will be dropped in a follow-up PR once the S3 path has been proven over a couple of release cycles.
 
 S3 uploads use GitHub OIDC to assume the `experiments-publisher` IAM role. The trust policy only accepts tag-push runs (`ref:refs/tags/*`), so PR builds and feature branches cannot publish — even if compromised.

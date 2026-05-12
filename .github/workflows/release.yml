@@ -142,19 +142,22 @@ jobs:
         #
         # URL pattern (predictable from <lensVersion>, no API call needed):
         #   https://github.com/lensapp/lens-desktop-experiments/releases/download/latest-<lensVersion>/pointer.json
+        #
+        # On first publish for a Lens version we create the floating release
+        # and tag. On every subsequent publish we only replace the pointer.json
+        # asset — the tag stays put. Tag-moving is non-idiomatic and breaks
+        # anyone who has fetched it (git complains, pinned SHAs go stale).
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           floating_tag="latest-${{ steps.lens_version.outputs.lens_version }}"
 
-          # Recreate from scratch. --cleanup-tag removes the old tag so the
-          # next create step can recreate it at the current commit; the
-          # `|| true` swallows the not-found error on first publish.
-          gh release delete "$floating_tag" --yes --cleanup-tag 2>/dev/null || true
+          if ! gh release view "$floating_tag" >/dev/null 2>&1; then
+            gh release create "$floating_tag" \
+              --title "Pointer to latest ${{ steps.lens_version.outputs.lens_version }} release" \
+              --notes "Auto-updated pointer for Lens version ${{ steps.lens_version.outputs.lens_version }}. The pointer.json asset contains { tag, publishedAt } for the most recent tagged release. The tag itself is stable; only the asset moves." \
+              --prerelease \
+              --target "${{ github.sha }}"
+          fi
 
-          gh release create "$floating_tag" \
-            --title "Pointer to latest ${{ steps.lens_version.outputs.lens_version }} release" \
-            --notes "Auto-updated pointer to the latest tagged release for Lens version ${{ steps.lens_version.outputs.lens_version }}. The pointer.json asset contains { tag, publishedAt }." \
-            --prerelease \
-            --target "${{ github.sha }}" \
-            pointer.json
+          gh release upload "$floating_tag" pointer.json --clobber
