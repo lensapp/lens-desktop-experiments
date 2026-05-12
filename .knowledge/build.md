@@ -44,6 +44,13 @@ This path bypasses signing / manifest / catalog — it does not validate the sig
 
 ## Publishing
 
-Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). Lens clients look for that exact tag pattern at runtime.
+Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The workflow trigger filter and the Lens Desktop client both require this exact shape — a `v` prefix or anything else will neither trigger CI nor be discoverable by clients.
 
-Before relying on push-tag automation, verify that `.github/workflows/release.yml` is configured for the same tag pattern. If the workflow is still triggered by some other convention, use manual dispatch with the exact `<lensVersion>.<numericSuffix>` tag or update the workflow first. The consumer in Lens Desktop does **not** understand a `v` prefix.
+`.github/workflows/release.yml` builds, signs, and generates the manifest, then publishes to two destinations:
+
+- **S3 (primary):** `s3://lens-labs-experiments-prod/releases/<tag>/` for immutable artifacts (cached forever) and `s3://lens-labs-experiments-prod/latest/<lensVersion>.json` as the pointer the client reads (5-min cache). Served via CloudFront in the LensLabs AWS account. New Lens Desktop clients fetch from here.
+- **GitHub Release (fallback):** same artifacts attached to a GitHub release for the tag. Kept during the migration as a human-browsable backup; will be dropped in a follow-up PR once the S3 path is proven over a couple of release cycles.
+
+S3 uploads use GitHub OIDC to assume the `experiments-publisher` IAM role. The trust policy only accepts tag-push runs (`ref:refs/tags/*`), so PR builds and feature branches cannot publish — even if compromised.
+
+**Manual re-publish.** Trigger via `workflow_dispatch` with the tag as the ref (not the branch). Dispatching from a branch (e.g. `main`) will run but fail at the AWS credentials step because the role trust requires a tag ref.
