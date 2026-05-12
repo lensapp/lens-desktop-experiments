@@ -46,10 +46,16 @@ This path bypasses signing / manifest / catalog — it does not validate the sig
 
 Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The workflow trigger filter and the Lens Desktop client both require this exact shape — a `v` prefix or anything else will neither trigger CI nor be discoverable by clients.
 
-`.github/workflows/release.yml` builds, signs, and generates the manifest, then publishes to two destinations:
+`.github/workflows/release.yml` builds, signs, and generates the manifest, then publishes to two destinations, each with its own pointer file:
 
-- **S3 (primary):** `s3://lens-labs-experiments-prod/releases/<tag>/` for immutable artifacts (cached forever) and `s3://lens-labs-experiments-prod/latest/<lensVersion>.json` as the pointer the client reads (5-min cache). Served via CloudFront in the LensLabs AWS account. New Lens Desktop clients fetch from here.
-- **GitHub Release (fallback):** same artifacts attached to a GitHub release for the tag. Kept during the migration as a human-browsable backup; will be dropped in a follow-up PR once the S3 path is proven over a couple of release cycles.
+- **S3 (primary):**
+  - Artifacts: `s3://lens-labs-experiments-prod/releases/<tag>/` (immutable, cached forever).
+  - Pointer: `s3://lens-labs-experiments-prod/latest/<lensVersion>.json` (5-min cache, contains `{ tag, publishedAt }`).
+  - Served via CloudFront in the LensLabs AWS account. New Lens Desktop clients fetch from here.
+- **GitHub Releases (fallback):**
+  - Canonical release for the tag with all artifacts attached. Human-browsable; clients fall back to this if S3/CloudFront is unreachable.
+  - Floating pointer release named `latest-<lensVersion>`, marked prerelease, with a single `pointer.json` asset. Same shape as the S3 pointer. Reachable at `https://github.com/lensapp/lens-desktop-experiments/releases/download/latest-<lensVersion>/pointer.json` — predictable URL, no API call required. The workflow deletes and recreates this release on every publish.
+  - The whole GitHub side will be dropped in a follow-up PR once the S3 path has been proven over a couple of release cycles.
 
 S3 uploads use GitHub OIDC to assume the `experiments-publisher` IAM role. The trust policy only accepts tag-push runs (`ref:refs/tags/*`), so PR builds and feature branches cannot publish — even if compromised.
 
