@@ -13,7 +13,6 @@ export const withChildDiKludgeBunch = <T>(toBeKludged: Injectable<(arg: T) => vo
     kludgeSender: getInjectable2({
       id: `with-intercepted-sending-in-kludge-channel-for-${toBeKludged.id}`,
       injectionToken: instantiationDecoratorToken.for(toBeKludged),
-      decorable: false,
 
       instantiate:
         () =>
