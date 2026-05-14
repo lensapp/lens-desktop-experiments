@@ -14,19 +14,15 @@ export const BlankTolerantNumberInput = observer(
     const currentValidity = validity.get();
     const envConfigured = isEnvConfigured.get();
 
-    const displayValue =
-      envConfigured
+    const displayValue = envConfigured
+      ? ""
+      : currentValue === undefined || currentValue === null || Number.isNaN(currentValue as unknown as number)
         ? ""
-        : currentValue === undefined || currentValue === null || Number.isNaN(currentValue as unknown as number)
-          ? ""
-          : (currentValue as unknown as number).toString();
+        : (currentValue as unknown as number).toString();
 
     return (
       <section>
-        <label
-          htmlFor={`${fieldDef.id}-input`}
-          style={{ display: "block", fontWeight: 600, marginBottom: 4 }}
-        >
+        <label htmlFor={`${fieldDef.id}-input`} style={{ display: "block", fontWeight: 600, marginBottom: 4 }}>
           {`${fieldDef.label}${fieldDef.required ? " *" : ""}`}
         </label>
         <Input
