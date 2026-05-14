@@ -1,11 +1,12 @@
 import { getInjectable } from "@lensapp/injectable";
 import { observable } from "mobx";
 import { darkThemeDefaults } from "../dark-theme-defaults";
-import { customColorsStorageKey } from "./storage-keys";
+import { lightThemeDefaults } from "../light-theme-defaults";
+import { customDarkColorsStorageKey, customLightColorsStorageKey } from "./storage-keys";
 
-const readPersisted = (): Record<string, string> => {
+const readPersisted = (storageKey: string): Record<string, string> => {
   try {
-    const raw = window.localStorage.getItem(customColorsStorageKey);
+    const raw = window.localStorage.getItem(storageKey);
 
     if (!raw) {
       return {};
@@ -15,9 +16,7 @@ const readPersisted = (): Record<string, string> => {
 
     if (parsed && typeof parsed === "object") {
       return Object.fromEntries(
-        Object.entries(parsed as Record<string, unknown>).filter(
-          ([, value]) => typeof value === "string",
-        ),
+        Object.entries(parsed as Record<string, unknown>).filter(([, value]) => typeof value === "string"),
       ) as Record<string, string>;
     }
 
@@ -27,10 +26,19 @@ const readPersisted = (): Record<string, string> => {
   }
 };
 
-export const customThemeColorsInjectable = getInjectable({
-  id: "theme-tweaker-custom-colors",
+export const customDarkColorsInjectable = getInjectable({
+  id: "theme-tweaker-custom-dark-colors",
   instantiate: () => {
-    const seed = { ...darkThemeDefaults, ...readPersisted() };
+    const seed = { ...darkThemeDefaults, ...readPersisted(customDarkColorsStorageKey) };
+
+    return observable.map<string, string>(Object.entries(seed));
+  },
+});
+
+export const customLightColorsInjectable = getInjectable({
+  id: "theme-tweaker-custom-light-colors",
+  instantiate: () => {
+    const seed = { ...lightThemeDefaults, ...readPersisted(customLightColorsStorageKey) };
 
     return observable.map<string, string>(Object.entries(seed));
   },

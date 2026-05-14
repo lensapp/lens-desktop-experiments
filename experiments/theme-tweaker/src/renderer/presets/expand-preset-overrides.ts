@@ -46,7 +46,9 @@ export const expandPresetOverrides = (
   }
 
   for (const [semantic, synonyms] of semanticSynonyms) {
-    if (!result[semantic]) continue;
+    if (!result[semantic]) {
+      continue;
+    }
 
     for (const syn of synonyms) {
       if (!(syn in overrides)) {
