@@ -1,5 +1,4 @@
-import path from "node:path";
-import glob from "fast-glob";
+import { loadExperiments, requireChannel } from "../experiments";
 import { buildExperiment } from "./esbuild.config";
 
 async function main() {
@@ -7,22 +6,23 @@ async function main() {
   const experimentNameIndex = args.indexOf("--experiment");
   const specificExperiment = experimentNameIndex !== -1 ? args[experimentNameIndex + 1] : undefined;
 
-  const experimentsRoot = path.resolve(__dirname, "..", "..", "experiments");
-  const packageJsonPaths = await glob("*/package.json", {
-    cwd: experimentsRoot,
-    ignore: ["_template/**"],
-  });
+  const allExperiments = await loadExperiments();
 
-  const experiments = packageJsonPaths
-    .map((p) => ({
-      name: path.dirname(p),
-      dir: path.join(experimentsRoot, path.dirname(p)),
-    }))
-    .filter((e) => !specificExperiment || e.name === specificExperiment);
-
-  if (experiments.length === 0) {
-    console.error(specificExperiment ? `Experiment not found: ${specificExperiment}` : "No experiments found");
-    process.exit(1);
+  let experiments = allExperiments;
+  if (specificExperiment) {
+    experiments = allExperiments.filter((e) => e.name === specificExperiment);
+    if (experiments.length === 0) {
+      console.error(`Experiment not found: ${specificExperiment}`);
+      process.exit(1);
+    }
+  } else if (process.env.CHANNEL) {
+    const channel = requireChannel(process.env.CHANNEL);
+    experiments = allExperiments.filter((e) => e.channels.includes(channel));
+    if (experiments.length === 0) {
+      console.error(`No experiments match channel "${channel}"`);
+      process.exit(1);
+    }
+    console.log(`Channel "${channel}": building ${experiments.length} experiment(s)`);
   }
 
   for (const experiment of experiments) {

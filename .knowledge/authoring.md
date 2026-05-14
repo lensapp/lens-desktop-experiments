@@ -73,9 +73,23 @@ Rules:
 
 Required structure (see `experiments/hello-world/package.json` for a complete example):
 
-1. `"experiment"` block with `id`, `name`, `description`, `terminationUtcDateTime` (ISO 8601 UTC). Every experiment must declare a termination date — beyond it, the experiment is expected to be removed (graduated into the monorepo or deleted).
+1. `"experiment"` block with `id`, `name`, `description`, `channels`, `terminationUtcDateTime` (ISO 8601 UTC). Every experiment must declare a termination date — beyond it, the experiment is expected to be removed (graduated into the monorepo or deleted).
 2. `"main": "./dist/index.js"` and matching `exports`.
 3. Every `@lensapp/*` / framework package the feature consumes at runtime listed in **both** `peerDependencies` and `devDependencies`.
+
+### `channels`
+
+A non-empty array of release channels the experiment is published to. Allowed values: `"prod"`, `"dev"`. The release workflow takes a channel input and only includes experiments whose `channels` array contains it — keeping in-progress experiments out of production Lens builds without code changes on the Lens client side.
+
+```jsonc
+"experiment": {
+  "id": "...",
+  "channels": ["dev"],          // only ships to dev Lens releases
+  "terminationUtcDateTime": "..."
+}
+```
+
+Default to `["dev"]` for new experiments. Add `"prod"` only when the experiment is ready to ship to production Lens builds.
 
 ## Injectables
 
@@ -87,7 +101,7 @@ Run through this before opening a PR for a new experiment.
 
 - [ ] New directory `experiments/<id>/` modeled on `hello-world` (simple) or `dev-tools` (multi-feature)
 - [ ] `index.ts` re-exports the feature(s)
-- [ ] `package.json` has the `experiment` block with a real `terminationUtcDateTime`
+- [ ] `package.json` has the `experiment` block with a real `terminationUtcDateTime` and a `channels` array (start with `["dev"]`)
 - [ ] Every runtime import is in `peerDependencies` (and `devDependencies`) at the **published** version — no source/workspace links
 - [ ] Only public exports of `@lensapp/*` packages are imported — nothing from `_private/` or unpublished internals
 - [ ] Any needed monorepo support is **additive** and landed in **one dedicated PR** over there before being depended on here
