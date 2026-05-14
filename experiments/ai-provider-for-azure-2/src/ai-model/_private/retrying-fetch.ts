@@ -78,11 +78,7 @@ const rewriteMaxTokensToMaxCompletionTokens = (body: BodyInit | null | undefined
   return body;
 };
 
-const maybeRewriteBody = (
-  url: string,
-  init: RequestInit | undefined,
-  force: boolean,
-): RequestInit | undefined => {
+const maybeRewriteBody = (url: string, init: RequestInit | undefined, force: boolean): RequestInit | undefined => {
   if (!force) {
     return init;
   }
@@ -146,7 +142,7 @@ export const getRetryingFetch = (options: RetryingFetchOptions): typeof fetch =>
 };
 
 const backoffMs = (attempt: number, base: number, random: () => number): number => {
-  const exponential = base * Math.pow(3, attempt - 1);
+  const exponential = base * 3 ** (attempt - 1);
   const jitter = exponential * (random() * 0.5);
   return Math.floor(exponential + jitter);
 };

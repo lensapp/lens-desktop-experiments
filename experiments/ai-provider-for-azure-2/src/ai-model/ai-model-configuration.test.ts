@@ -42,7 +42,9 @@ describe("ai-model-configuration for azure-2", () => {
 
   describe("when max output tokens is blank (empty string)", () => {
     beforeEach(() => {
-      di.override(maxOutputTokensFieldBunch.outboundValue, () => Promise.resolve(computed(() => "" as unknown as number)));
+      di.override(maxOutputTokensFieldBunch.outboundValue, () =>
+        Promise.resolve(computed(() => "" as unknown as number)),
+      );
     });
 
     it("returns undefined as maxOutputTokens so streamText omits the field", async () => {
@@ -75,7 +77,9 @@ describe("ai-model-configuration for azure-2", () => {
 
   describe("when context window size is blank", () => {
     beforeEach(() => {
-      di.override(contextWindowSizeFieldBunch.outboundValue, () => Promise.resolve(computed(() => "" as unknown as number)));
+      di.override(contextWindowSizeFieldBunch.outboundValue, () =>
+        Promise.resolve(computed(() => "" as unknown as number)),
+      );
     });
 
     it("returns 0 as maxContextWindowTokens (preserves prior default behavior)", async () => {
