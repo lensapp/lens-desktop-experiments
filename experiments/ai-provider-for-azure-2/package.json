@@ -7,7 +7,8 @@
     "id": "ai-provider-for-azure-2",
     "name": "Azure (Lab)",
     "description": "Lab build of the Azure OpenAI provider for Prism. Fixes the blank-Max-Output-Tokens-becomes-zero bug, adds an explicit toggle to force max_completion_tokens for reasoning-style deployments (GPT-5/o1/o3/o4-mini), and retries transient DNS / private-endpoint failures.",
-    "terminationUtcDateTime": "2026-09-01T00:00:00Z"
+    "terminationUtcDateTime": "2026-09-01T00:00:00Z",
+    "channels": ["prod", "dev"]
   },
   "exports": {
     ".": {
