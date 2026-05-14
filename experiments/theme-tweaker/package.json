@@ -7,7 +7,8 @@
     "id": "theme-tweaker",
     "name": "Theme Tweaker",
     "description": "Live-edit every Lens theme color, save your own themes, and pick from curated presets",
-    "terminationUtcDateTime": "2027-01-01T00:00:00Z"
+    "terminationUtcDateTime": "2027-01-01T00:00:00Z",
+    "channels": ["prod", "dev"]
   },
   "exports": {
     ".": {
