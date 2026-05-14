@@ -17,8 +17,8 @@ Anything else you import **will be bundled into `dist/index.js`**. Keep bundles 
 npm install
 
 # Build
-npm run build                                # all experiments
-npm run build:experiment -- <experiment-id>  # single
+npm run build                                # all experiments (or CHANNEL=prod npm run build to filter)
+npm run build:experiment -- <experiment-id>  # single (channel ignored)
 
 # Verify
 npm run typecheck                            # tsc --noEmit per experiment
@@ -44,9 +44,16 @@ This path bypasses signing / manifest / catalog — it does not validate the sig
 
 ## Publishing
 
-Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The workflow trigger filter and the Lens Desktop client both require this exact shape — a `v` prefix or anything else will neither trigger CI nor be discoverable by clients.
+Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The Lens Desktop client requires this exact shape — a `v` prefix or anything else will not be discoverable by clients.
 
-`.github/workflows/release.yml` builds, signs, and generates the manifest, then publishes to two destinations, each with its own pointer file:
+Releases are **manual**. Push the tag, then trigger `.github/workflows/release.yml` via `workflow_dispatch` with two inputs:
+
+- `tag` — the pushed tag (also used as the ref when dispatching, so OIDC trust accepts the run).
+- `channel` — `prod` or `dev`. Only experiments whose `experiment.channels` array contains the chosen channel are built, signed, and included in the manifest.
+
+Bare tag pushes do **not** publish. Forcing an explicit channel selection per release prevents accidentally shipping an in-progress experiment to `prod`.
+
+`release.yml` builds, signs, and generates the manifest, then publishes to two destinations, each with its own pointer file:
 
 - **S3 (primary):**
   - Artifacts: `s3://lens-labs-experiments-prod/releases/<tag>/` (immutable, cached forever).
@@ -57,6 +64,4 @@ Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The workflow 
   - Floating pointer release named `latest-<lensVersion>`, marked prerelease, with a single `pointer.json` asset. Same shape as the S3 pointer. Reachable at `https://github.com/lensapp/lens-desktop-experiments/releases/download/latest-<lensVersion>/pointer.json` — predictable URL, no API call required. The release + tag are created once per Lens version; subsequent publishes only replace the `pointer.json` asset (`gh release upload --clobber`), so the tag itself never moves.
   - The whole GitHub side will be dropped in a follow-up PR once the S3 path has been proven over a couple of release cycles.
 
-S3 uploads use GitHub OIDC to assume the `experiments-publisher` IAM role. The trust policy only accepts tag-push runs (`ref:refs/tags/*`), so PR builds and feature branches cannot publish — even if compromised.
-
-**Manual re-publish.** Trigger via `workflow_dispatch` with the tag as the ref (not the branch). Dispatching from a branch (e.g. `main`) will run but fail at the AWS credentials step because the role trust requires a tag ref.
+S3 uploads use GitHub OIDC to assume the `experiments-publisher` IAM role. The trust policy only accepts runs with a tag ref (`ref:refs/tags/*`), so PR builds and feature branches cannot publish — even if compromised. Dispatching from a branch (e.g. `main`) will run but fail at the AWS credentials step.

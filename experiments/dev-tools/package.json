@@ -7,6 +7,7 @@
     "id": "dev-tools",
     "name": "Dev Tools",
     "description": "Development tools for Lens Desktop including icon browser, telemetry viewer, living docs, feature toggler, and user info editor",
+    "channels": ["dev"],
     "terminationUtcDateTime": "2027-01-01T00:00:00Z"
   },
   "homepage": "https://k8slens.dev",

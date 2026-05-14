@@ -7,6 +7,7 @@
     "id": "hello-world",
     "name": "Hello World",
     "description": "A sample experiment that shows a status bar indicator when loaded",
+    "channels": ["dev"],
     "terminationUtcDateTime": "2027-01-01T00:00:00Z"
   },
   "exports": {
