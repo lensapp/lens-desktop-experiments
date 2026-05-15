@@ -1,6 +1,6 @@
 import { getInjectable } from "@lensapp/injectable";
 import { observable } from "mobx";
-import { savedThemesStorageKey } from "./storage-keys";
+import { getPersistedInjectionToken } from "@lensapp/persisted-state";
 
 export interface SavedTheme {
   readonly name: string;
@@ -9,44 +9,16 @@ export interface SavedTheme {
   readonly colors: Readonly<Record<string, string>>;
 }
 
-const isSavedTheme = (value: unknown): value is SavedTheme => {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
+export const savedThemesPersistedInjectable = getInjectable({
+  id: "theme-tweaker-saved-themes-persisted",
+  instantiate: (di) => {
+    const getPersisted = di.inject(getPersistedInjectionToken);
 
-  const v = value as Partial<SavedTheme>;
-
-  return (
-    typeof v.name === "string" &&
-    typeof v.createdAt === "string" &&
-    (v.mode === "dark" || v.mode === "light" || v.mode === undefined) &&
-    !!v.colors &&
-    typeof v.colors === "object" &&
-    Object.values(v.colors as Record<string, unknown>).every((c) => typeof c === "string")
-  );
-};
-
-const readPersisted = (): ReadonlyArray<SavedTheme> => {
-  try {
-    const raw = window.localStorage.getItem(savedThemesStorageKey);
-
-    if (!raw) {
-      return [];
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter(isSavedTheme).map((t) => ({ ...t, mode: t.mode ?? "dark" }));
-  } catch {
-    return [];
-  }
-};
+    return getPersisted(["theme-tweaker", "saved-themes"], observable.array<SavedTheme>([], { deep: false }));
+  },
+});
 
 export const savedThemesInjectable = getInjectable({
   id: "theme-tweaker-saved-themes",
-  instantiate: () => observable.array<SavedTheme>([...readPersisted()], { deep: false }),
+  instantiate: (di) => di.inject(savedThemesPersistedInjectable).promise(),
 });

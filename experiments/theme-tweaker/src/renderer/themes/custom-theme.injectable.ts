@@ -1,20 +1,24 @@
 import { getInjectable } from "@lensapp/injectable";
 import { lensThemeDeclarationInjectionToken, type LensTheme } from "@lensapp/theme";
-import { customDarkColorsInjectable, customLightColorsInjectable } from "../state/custom-theme-colors.injectable";
-import { customThemeModeInjectable } from "../state/custom-theme-mode.injectable";
+import {
+  customDarkColorsPersistedInjectable,
+  customLightColorsPersistedInjectable,
+} from "../state/custom-theme-colors.injectable";
+import { customThemeModePersistedInjectable } from "../state/custom-theme-mode.injectable";
 import { darkThemeDefaults, darkTerminalDefaults } from "../dark-theme-defaults";
 import { lightThemeDefaults, lightTerminalDefaults } from "../light-theme-defaults";
-
-export const customThemeId = "theme-tweaker-custom";
+import { customThemeId } from "./custom-theme-id";
 
 const colorNames = Object.keys(darkThemeDefaults);
 
-const customThemeInjectable = getInjectable({
+export const customThemeInjectable = getInjectable({
   id: customThemeId,
   instantiate: (di): LensTheme => {
-    const darkColors = di.inject(customDarkColorsInjectable);
-    const lightColors = di.inject(customLightColorsInjectable);
-    const mode = di.inject(customThemeModeInjectable);
+    const darkColorsPersisted = di.inject(customDarkColorsPersistedInjectable);
+    const lightColorsPersisted = di.inject(customLightColorsPersistedInjectable);
+    const modePersisted = di.inject(customThemeModePersistedInjectable);
+
+    const currentMode = () => modePersisted.reactive.current()?.get() ?? "dark";
 
     const colors = {} as Record<string, string>;
 
@@ -23,18 +27,19 @@ const customThemeInjectable = getInjectable({
         enumerable: true,
         configurable: false,
         get: () => {
-          if (mode.get() === "light") {
-            return lightColors.get(name) ?? lightThemeDefaults[name] ?? "#000000";
+          if (currentMode() === "light") {
+            return lightColorsPersisted.reactive.current()?.get(name) ?? lightThemeDefaults[name] ?? "#000000";
           }
 
-          return darkColors.get(name) ?? darkThemeDefaults[name] ?? "#000000";
+          return darkColorsPersisted.reactive.current()?.get(name) ?? darkThemeDefaults[name] ?? "#000000";
         },
       });
     }
 
     const terminalProxy = new Proxy({} as Record<string, string>, {
       get: (_t, p) => {
-        const defaults: Record<string, string> = mode.get() === "light" ? lightTerminalDefaults : darkTerminalDefaults;
+        const defaults: Record<string, string> =
+          currentMode() === "light" ? lightTerminalDefaults : darkTerminalDefaults;
 
         return defaults[p as string];
       },
@@ -46,12 +51,12 @@ const customThemeInjectable = getInjectable({
       id: customThemeId,
       name: "Custom (Tweaker)",
       get type() {
-        return mode.get();
+        return currentMode();
       },
       author: "You",
       description: "Live-editable theme — pick colors from the Theme Tweaker preferences",
       get monacoTheme() {
-        return mode.get() === "light" ? "vs" : "clouds-midnight";
+        return currentMode() === "light" ? "vs" : "clouds-midnight";
       },
       colors: colors as LensTheme["colors"],
       terminalColors: terminalProxy as LensTheme["terminalColors"],

@@ -171,6 +171,24 @@ const tokyoDay = {
 
 export const presets: ReadonlyArray<PresetDefinition> = [
   {
+    id: "theme-tweaker-lens-dark",
+    name: "Lens Dark",
+    type: "dark",
+    author: "Mirantis",
+    description: "Default Lens dark theme",
+    swatch: ["#181A1C", "#3d90ce", "#c93dce", "#F1F3F5"],
+    overrides: {},
+  },
+  {
+    id: "theme-tweaker-lens-light",
+    name: "Lens Light",
+    type: "light",
+    author: "Mirantis",
+    description: "Default Lens light theme",
+    swatch: ["#ededed", "#3d90ce", "#c93dce", "#4b4b4b"],
+    overrides: {},
+  },
+  {
     id: "theme-tweaker-dracula",
     name: "Dracula",
     type: "dark",

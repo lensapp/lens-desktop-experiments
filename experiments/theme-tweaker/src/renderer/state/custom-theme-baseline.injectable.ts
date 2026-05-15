@@ -4,36 +4,36 @@ import { getPersistedInjectionToken } from "@lensapp/persisted-state";
 import { darkThemeDefaults } from "../dark-theme-defaults";
 import { lightThemeDefaults } from "../light-theme-defaults";
 
-export const customDarkColorsPersistedInjectable = getInjectable({
-  id: "theme-tweaker-custom-dark-colors-persisted",
+export const customDarkBaselinePersistedInjectable = getInjectable({
+  id: "theme-tweaker-custom-dark-baseline-persisted",
   instantiate: (di) => {
     const getPersisted = di.inject(getPersistedInjectionToken);
 
     return getPersisted(
-      ["theme-tweaker", "custom-dark-colors"],
+      ["theme-tweaker", "custom-dark-baseline"],
       observable.map<string, string>(Object.entries(darkThemeDefaults), { deep: false }),
     );
   },
 });
 
-export const customLightColorsPersistedInjectable = getInjectable({
-  id: "theme-tweaker-custom-light-colors-persisted",
+export const customLightBaselinePersistedInjectable = getInjectable({
+  id: "theme-tweaker-custom-light-baseline-persisted",
   instantiate: (di) => {
     const getPersisted = di.inject(getPersistedInjectionToken);
 
     return getPersisted(
-      ["theme-tweaker", "custom-light-colors"],
+      ["theme-tweaker", "custom-light-baseline"],
       observable.map<string, string>(Object.entries(lightThemeDefaults), { deep: false }),
     );
   },
 });
 
-export const customDarkColorsInjectable = getInjectable({
-  id: "theme-tweaker-custom-dark-colors",
-  instantiate: (di) => di.inject(customDarkColorsPersistedInjectable).promise(),
+export const customDarkBaselineInjectable = getInjectable({
+  id: "theme-tweaker-custom-dark-baseline",
+  instantiate: (di) => di.inject(customDarkBaselinePersistedInjectable).promise(),
 });
 
-export const customLightColorsInjectable = getInjectable({
-  id: "theme-tweaker-custom-light-colors",
-  instantiate: (di) => di.inject(customLightColorsPersistedInjectable).promise(),
+export const customLightBaselineInjectable = getInjectable({
+  id: "theme-tweaker-custom-light-baseline",
+  instantiate: (di) => di.inject(customLightBaselinePersistedInjectable).promise(),
 });
