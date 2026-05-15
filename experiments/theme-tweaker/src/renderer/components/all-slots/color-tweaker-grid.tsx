@@ -82,11 +82,11 @@ const ColorCard = observer(
         </Div>
         <Button
           type="button"
-          $onClick={isChanged ? () => actions.resetColor(entry.name, currentMode) : undefined}
-          $enabled={isChanged}
-          title={isChanged ? "Reset to last applied" : "No changes to reset"}
+          $onClick={() => actions.resetColor(entry.name, currentMode)}
+          title="Reset to last applied"
           aria-label={`Reset ${entry.label}`}
           $color={isChanged ? "textHighlight" : "grey60"}
+          $cursor="pointer"
           $padding={{ vertical: "xxs", horizontal: "xs" }}
           $backgroundColor="transparent"
           $border={{ width: "zero", radius: "s" }}
