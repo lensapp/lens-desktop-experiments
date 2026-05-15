@@ -73,7 +73,7 @@ const ColorCard = observer(
           {isChanged ? "• " : ""}
           {entry.label}
         </Span>
-        <Div style={{ width: 96, flexShrink: 0 }}>
+        <Div style={{ width: 96, flexShrink: 0, overflow: "hidden" }}>
           <Input
             theme="round-black"
             value={current}
@@ -91,7 +91,7 @@ const ColorCard = observer(
           $backgroundColor="transparent"
           $border={{ width: "zero", radius: "s" }}
           $font={{ size: "m" }}
-          style={{ flexShrink: 0, minWidth: 28, lineHeight: 1 }}
+          style={{ flexShrink: 0, minWidth: 28, lineHeight: 1, position: "relative", zIndex: 1 }}
         >
           ↺
         </Button>
