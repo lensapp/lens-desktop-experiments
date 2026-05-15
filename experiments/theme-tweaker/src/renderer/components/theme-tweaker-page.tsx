@@ -6,6 +6,7 @@ import { useSyncInject } from "@lensapp/use-sync-inject";
 import { useInjectAsReactive } from "@lensapp/use-inject-as-reactive";
 import { activeThemeInjectable } from "@lensapp/theme-renderer";
 import { customDarkColorsInjectable, customLightColorsInjectable } from "../state/custom-theme-colors.injectable";
+import { customDarkBaselineInjectable, customLightBaselineInjectable } from "../state/custom-theme-baseline.injectable";
 import { customThemeModeInjectable } from "../state/custom-theme-mode.injectable";
 import { savedThemesInjectable } from "../state/saved-themes.injectable";
 import { themeTweakerActionsInjectable } from "./manage/theme-tweaker-actions.injectable";
@@ -20,6 +21,8 @@ import { ManageBar } from "./manage/manage-bar";
 export const ThemeTweakerPage = observer(() => {
   const darkColors = useInjectAsReactive(customDarkColorsInjectable).get();
   const lightColors = useInjectAsReactive(customLightColorsInjectable).get();
+  const darkBaseline = useInjectAsReactive(customDarkBaselineInjectable).get();
+  const lightBaseline = useInjectAsReactive(customLightBaselineInjectable).get();
   const mode = useInjectAsReactive(customThemeModeInjectable).get();
   const savedThemes = useInjectAsReactive(savedThemesInjectable).get();
   const actions = useInjectAsReactive(themeTweakerActionsInjectable).get();
@@ -29,12 +32,22 @@ export const ThemeTweakerPage = observer(() => {
   const [pendingName, setPendingName] = useState("");
   const [presetFilter, setPresetFilter] = useState<PresetFilter>("all");
 
-  if (!darkColors || !lightColors || !mode || !savedThemes || !actions || !activePresetIds) {
+  if (
+    !darkColors ||
+    !lightColors ||
+    !darkBaseline ||
+    !lightBaseline ||
+    !mode ||
+    !savedThemes ||
+    !actions ||
+    !activePresetIds
+  ) {
     return null;
   }
 
   const currentMode = mode.get();
   const activeMap = currentMode === "light" ? lightColors : darkColors;
+  const activeBaseline = currentMode === "light" ? lightBaseline : darkBaseline;
 
   return (
     <>
@@ -90,7 +103,12 @@ export const ThemeTweakerPage = observer(() => {
         <SectionBlock $padding="m" $border={{ width: "xxs", color: "grey60", radius: "s" }}>
           <SectionBlock.Title>{`All slots · ${activeMap.size} colors · ${currentMode}`}</SectionBlock.Title>
           <SectionBlock.Content>
-            <ColorTweakerGrid colorsState={activeMap} currentMode={currentMode} actions={actions} />
+            <ColorTweakerGrid
+              colorsState={activeMap}
+              baselineState={activeBaseline}
+              currentMode={currentMode}
+              actions={actions}
+            />
           </SectionBlock.Content>
         </SectionBlock>
 
