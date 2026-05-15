@@ -4,25 +4,29 @@ import { anytimeAfterApplicationIsLoadedInjectionToken } from "@lensapp/applicat
 import { activeThemeInjectable } from "@lensapp/theme-renderer";
 import { customDarkColorsInjectable, customLightColorsInjectable } from "./state/custom-theme-colors.injectable";
 import { customThemeModeInjectable } from "./state/custom-theme-mode.injectable";
-import { customThemeId } from "./themes/custom-theme.injectable";
+import { customThemeId } from "./themes/custom-theme-id";
 import { darkThemeDefaults } from "./dark-theme-defaults";
 
 const colorNames = Object.keys(darkThemeDefaults);
 
-/**
- * The host's apply-lens-theme reaction only fires when the active theme *reference* changes —
- * it cannot observe the inner colors or the mode of the Custom theme. This runnable closes that
- * gap: whenever the Custom theme is active, it re-writes the --<color> CSS variables and the
- * `theme-light` body class whenever the active color map or mode mutates.
- */
+// Workaround: @lensapp/theme-renderer's apply-lens-theme reaction is wired as
+// `reaction(() => activeTheme.get(), applyLensTheme)` — its data-fn only tracks the
+// theme reference, and applyLensTheme reads `theme.colors` outside any MobX tracking
+// context. The Custom theme keeps a stable reference across mode toggles and color
+// edits, so the host never repaints on its own. This injectable mirrors the host's
+// behavior (CSS variable writes + theme-light body class) for the Custom theme,
+// fired by a reaction that explicitly tracks per-key reads.
 const applyCustomColorsOnChangeInjectable = getInjectable({
   id: "theme-tweaker-apply-custom-colors-on-change",
   instantiate: (di) => ({
-    run: () => {
+    run: async () => {
       const activeTheme = di.inject(activeThemeInjectable);
-      const mode = di.inject(customThemeModeInjectable);
-      const darkColors = di.inject(customDarkColorsInjectable);
-      const lightColors = di.inject(customLightColorsInjectable);
+      const mode = await di.inject(customThemeModeInjectable);
+      const darkColors = await di.inject(customDarkColorsInjectable);
+      const lightColors = await di.inject(customLightColorsInjectable);
+
+      let previousValues: ReadonlyArray<string> | undefined;
+      let previousMode: "dark" | "light" | undefined;
 
       reaction(
         () => {
@@ -32,27 +36,39 @@ const applyCustomColorsOnChangeInjectable = getInjectable({
 
           const currentMode = mode.get();
           const activeMap = currentMode === "light" ? lightColors : darkColors;
-
-          // Explicit per-key reads so MobX observes value mutations on existing keys,
-          // not just key set membership changes.
           const values = colorNames.map((k) => activeMap.get(k) ?? "");
 
           return { mode: currentMode, values };
         },
         (snapshot) => {
           if (!snapshot) {
+            previousValues = undefined;
+            previousMode = undefined;
+
             return;
+          }
+
+          if (previousMode !== snapshot.mode) {
+            document.body.classList.toggle("theme-light", snapshot.mode === "light");
+            previousMode = snapshot.mode;
+            previousValues = undefined;
           }
 
           for (let i = 0; i < colorNames.length; i++) {
             const value = snapshot.values[i];
 
-            if (value) {
-              document.documentElement.style.setProperty(`--${colorNames[i]}`, value);
+            if (!value) {
+              continue;
             }
+
+            if (previousValues && previousValues[i] === value) {
+              continue;
+            }
+
+            document.documentElement.style.setProperty(`--${colorNames[i]}`, value);
           }
 
-          document.body.classList.toggle("theme-light", snapshot.mode === "light");
+          previousValues = snapshot.values;
         },
         { fireImmediately: true },
       );
