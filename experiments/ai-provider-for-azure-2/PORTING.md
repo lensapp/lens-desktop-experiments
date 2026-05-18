@@ -58,6 +58,33 @@ Roughly ~11 existing files, ~180 net lines. The diffs are the integration points
 ### Field-bunch ID renames
 - Several field-bunch injectables were given Azure-2-specific IDs in the experiment (`"…-for-azure-2"`). When porting, drop the `-2` and keep the original IDs.
 
+## Telemetry plan (defer until porting)
+
+The experiment currently emits **no telemetry of its own**. This is on purpose — the centralized telemetry in `ai-provider-instance-modal` and `ai-connector` already covers the high-value events for any provider that registers through the standard injection tokens (`updateAiProviderInstanceForKindInjectionToken`, `pingAiProviderForKindInjectionToken`, etc., which Azure-2 does use). So the experiment inherits these for free at runtime:
+
+- `prism / provider-instance-modal-open` and `-close` — params: `mode`, `uiOrigin`
+- `prism / provider-instance-created` / `-updated` / `-save-failed` — params: `aiProviderKind`, `uiOrigin`, plus `error` on save-failed
+- `prism / ping-provider` — params: `aiProviderKind`, `success`, `mode`, `uiOrigin`, optional `error`
+- `integrations / <kind>-providers-table-expand` and `integrations / add-<kind>-provider-instance` — params: `uiOrigin`
+
+Other monorepo AI providers (`ai-provider-for-azure`, `-anthropic`, `-open-ai`, `-lens-gpt`) emit **nothing extra**. Only `ai-provider-for-open-ai-compatible` adds one provider-specific event (`open-ai-compatible-base-url-updated`, params: `baseUrlHash`) because base URL is its unique knob.
+
+### Azure-2-specific events to add when porting
+
+These two have no analogue in the existing providers — they're the actual value Azure-2 adds, so they're worth instrumenting:
+
+1. **`prism / azure-force-reasoning-translation-toggled`** — params: `{ value: boolean }`. Fired from the field-bunch when the user flips the new toggle. Pattern: clone `ai-provider-for-open-ai-compatible/src/ai-provider-instance/_private/emit-base-url-updated-telemetry.injectable.ts`.
+
+2. **`prism / azure-retrying-fetch-retry-fired`** — params: `{ trigger: "dns" | "private-endpoint-403" | "5xx", attempt: number }`. Fired from `retrying-fetch.ts` whenever a retry is scheduled. **This is the most important one** — it's the only signal that tells you the retry layer is actually doing work in the wild (the whole point of the experiment).
+   - Add a `sendRetryFired?: (params) => void` option to `RetryingFetchOptions` and call it from the catch / retry-eligible branches.
+   - Wire it in `ai-model.injectable.ts` and `ping-provider.injectable.ts` from a `send-azure-retry-telemetry.injectable.ts` (same shape as theme-tweaker's `send-theme-tweaker-telemetry.injectable.ts`).
+   - Keep `retrying-fetch.ts` itself decoupled from `@lensapp/telemetry` so its unit tests stay simple.
+
+### Why not add these now in the experiment?
+
+- The shared modal/connector telemetry already gives 80% of the signal (adoption, save success, ping result by kind).
+- The retry-fired event needs the `@lensapp/telemetry` dep and `telemetryFeature` registration, which adds bundle weight; cheaper to land alongside the monorepo port where it lives with the rest of the provider.
+
 ## What to discard (do NOT port)
 
 - `azure2Specifier` and every `…-for-azure-2` ID rename — these only existed so the experiment could coexist with the real provider at runtime.
