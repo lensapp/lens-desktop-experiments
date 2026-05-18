@@ -13,6 +13,7 @@ import { darkThemeDefaults } from "../../dark-theme-defaults";
 import { lightThemeDefaults } from "../../light-theme-defaults";
 import { expandPresetOverrides } from "../../presets/expand-preset-overrides";
 import type { PresetDefinition } from "../../presets/presets-catalog";
+import sendThemeTweakerTelemetryInjectable from "../../telemetry/send-theme-tweaker-telemetry.injectable";
 
 const downloadJson = (filename: string, payload: unknown) => {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -65,6 +66,7 @@ export const themeTweakerActionsInjectable = getInjectable({
     const mode = await di.inject(customThemeModeInjectable);
     const savedThemes = await di.inject(savedThemesInjectable);
     const colorTheme = di.inject(colorThemeInjectable);
+    const sendTelemetry = di.inject(sendThemeTweakerTelemetryInjectable);
 
     const mapFor = (m: CustomThemeMode) => (m === "light" ? lightColors : darkColors);
     const baselineFor = (m: CustomThemeMode) => (m === "light" ? lightBaseline : darkBaseline);
@@ -86,6 +88,7 @@ export const themeTweakerActionsInjectable = getInjectable({
           mode.set(next);
           colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId });
         });
+        sendTelemetry({ action: "mode-toggled", params: { to: next } });
       },
 
       applyPreset: (preset) => {
@@ -97,6 +100,10 @@ export const themeTweakerActionsInjectable = getInjectable({
           mode.set(preset.type);
           writeWithBaseline(preset.type, fullSnapshot);
           colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId });
+        });
+        sendTelemetry({
+          action: "preset-applied",
+          params: { presetId: preset.id, presetType: preset.type },
         });
       },
 
@@ -115,6 +122,7 @@ export const themeTweakerActionsInjectable = getInjectable({
           writeWithBaseline(theme.mode, fullSnapshot);
           colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId });
         });
+        sendTelemetry({ action: "theme-applied-from-saved", params: { mode: theme.mode } });
       },
 
       saveCurrentAs: (name, currentMode) => {
@@ -131,6 +139,9 @@ export const themeTweakerActionsInjectable = getInjectable({
           snapshot[k] = v;
         }
 
+        const existingIndex = savedThemes.findIndex((t) => t.name === trimmed);
+        const isOverwrite = existingIndex >= 0;
+
         runInAction(() => {
           const newEntry: SavedTheme = {
             name: trimmed,
@@ -138,15 +149,15 @@ export const themeTweakerActionsInjectable = getInjectable({
             mode: currentMode,
             colors: snapshot,
           };
-          const existingIndex = savedThemes.findIndex((t) => t.name === trimmed);
 
-          if (existingIndex >= 0) {
+          if (isOverwrite) {
             savedThemes.splice(existingIndex, 1);
           }
 
           savedThemes.unshift(newEntry);
         });
 
+        sendTelemetry({ action: "theme-saved", params: { mode: currentMode, isOverwrite } });
         return true;
       },
 
@@ -158,6 +169,7 @@ export const themeTweakerActionsInjectable = getInjectable({
             savedThemes.splice(idx, 1);
           }
         });
+        sendTelemetry({ action: "theme-deleted", params: { mode: theme.mode } });
       },
 
       resetCurrentMode: (currentMode) => {
@@ -187,6 +199,7 @@ export const themeTweakerActionsInjectable = getInjectable({
         runInAction(() => {
           activeMap.set(name, value);
         });
+        sendTelemetry({ action: "color-tweaked", params: { mode: currentMode } });
       },
 
       exportCurrent: (currentMode) => {
