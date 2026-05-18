@@ -1,10 +1,11 @@
 import { Div, Span } from "@lensapp/element-components";
 import { Heading, SectionBlock, SectionBlockSeparator, SectionGroup } from "@lensapp/presentational-components";
 import { observer } from "mobx-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { useInjectAsReactive } from "@lensapp/use-inject-as-reactive";
 import { activeThemeInjectable } from "@lensapp/theme-renderer";
+import sendThemeTweakerTelemetryInjectable from "../telemetry/send-theme-tweaker-telemetry.injectable";
 import { customDarkColorsInjectable, customLightColorsInjectable } from "../state/custom-theme-colors.injectable";
 import { customDarkBaselineInjectable, customLightBaselineInjectable } from "../state/custom-theme-baseline.injectable";
 import { customThemeModeInjectable } from "../state/custom-theme-mode.injectable";
@@ -28,9 +29,14 @@ export const ThemeTweakerPage = observer(() => {
   const actions = useInjectAsReactive(themeTweakerActionsInjectable).get();
   const activePresetIds = useInjectAsReactive(activePresetIdsInjectable).get();
   const activeTheme = useSyncInject(activeThemeInjectable);
+  const sendTelemetry = useSyncInject(sendThemeTweakerTelemetryInjectable);
 
   const [pendingName, setPendingName] = useState("");
   const [presetFilter, setPresetFilter] = useState<PresetFilter>("all");
+
+  useEffect(() => {
+    sendTelemetry({ action: "page-opened", params: { activeThemeId: activeTheme.get().id } });
+  }, [sendTelemetry, activeTheme]);
 
   if (
     !darkColors ||

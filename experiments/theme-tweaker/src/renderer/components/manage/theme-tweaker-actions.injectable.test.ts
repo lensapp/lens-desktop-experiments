@@ -2,6 +2,7 @@ import { createContainer, type DiContainer } from "@lensapp/injectable";
 import { registerFeature } from "@lensapp/feature-core";
 import { getStrictOverrideOf } from "@lensapp/test-utils";
 import { getPersistedInjectionToken, type Persisted } from "@lensapp/persisted-state";
+import sendThemeTweakerTelemetryInjectable from "../../telemetry/send-theme-tweaker-telemetry.injectable";
 import { themeTweakerRendererFeature } from "../../feature";
 import { themeTweakerActionsInjectable, type ThemeTweakerActions } from "./theme-tweaker-actions.injectable";
 import { customDarkColorsInjectable, customLightColorsInjectable } from "../../state/custom-theme-colors.injectable";
@@ -30,6 +31,8 @@ describe("theme-tweaker actions", () => {
           promise: async () => observableValue,
         }) as unknown as Persisted<any>,
     );
+
+    di.override(sendThemeTweakerTelemetryInjectable, () => () => {});
 
     actions = await di.inject(themeTweakerActionsInjectable);
     savedThemes = await di.inject(savedThemesInjectable);

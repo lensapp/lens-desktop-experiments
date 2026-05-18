@@ -9,6 +9,7 @@ import { elementComponentFeature } from "@lensapp/element-components";
 import { inputFeature } from "@lensapp/input";
 import { presentationalComponentsFeature } from "@lensapp/presentational-components";
 import { persistedStateFeature } from "@lensapp/persisted-state";
+import { telemetryFeature } from "@lensapp/telemetry";
 
 export const themeTweakerRendererFeature = getFeature({
   id: "theme-tweaker-renderer",
@@ -23,5 +24,6 @@ export const themeTweakerRendererFeature = getFeature({
     inputFeature,
     presentationalComponentsFeature,
     persistedStateFeature,
+    telemetryFeature,
   ],
 });
