@@ -37,8 +37,8 @@ export const SuggestionsListbox = ({
         margin: 0,
         padding: "4px 0",
         listStyle: "none",
-        background: "var(--colorBackgroundSecondary, var(--colorPrimary, #1e1e1e))",
-        border: "1px solid var(--colorBorderPrimary, rgba(127,127,127,0.3))",
+        background: "var(--inputControlBackground, #1e1e1e)",
+        border: "1px solid var(--inputControlBorder, rgba(127,127,127,0.3))",
         borderRadius: "4px",
         boxShadow: "0 6px 16px rgba(0,0,0,0.25)",
         maxHeight: "16rem",
@@ -62,8 +62,7 @@ export const SuggestionsListbox = ({
             $style={{
               padding: "4px 12px",
               cursor: "pointer",
-              background:
-                index === activeIndex ? "var(--colorBackgroundTertiary, rgba(127,127,127,0.15))" : "transparent",
+              background: index === activeIndex ? "var(--menuActiveBackground, rgba(127,127,127,0.15))" : "transparent",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
