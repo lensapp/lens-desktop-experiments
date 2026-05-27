@@ -11,7 +11,7 @@ export const labsPreferenceGroupInjectable = getInjectable({
   id: "theme-tweaker-labs-preference-group",
   instantiate: () => ({
     id: labsPreferenceGroupId,
-    label: "Labs · Beta",
+    label: "Experimental features",
     orderNumber: 500,
   }),
   injectionToken: preferenceNavigationGroupInjectionToken,
