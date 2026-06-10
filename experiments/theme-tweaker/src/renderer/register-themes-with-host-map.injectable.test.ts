@@ -4,17 +4,24 @@ import { getStrictOverrideOf } from "@lensapp/test-utils";
 import { getPersistedInjectionToken, type Persisted } from "@lensapp/persisted-state";
 import { lensThemesInjectionToken, type LensTheme } from "@lensapp/theme";
 import { colorThemeInjectable, type ColorTheme } from "@lensapp/user-preferences";
-import { autorun, type IObservableValue } from "mobx";
+import { runInAction, type IObservableValue } from "mobx";
 import sendThemeTweakerTelemetryInjectable from "./telemetry/send-theme-tweaker-telemetry.injectable";
 import { themeTweakerRendererFeature } from "./feature";
 import registerThemesWithHostMapInjectable from "./register-themes-with-host-map.injectable";
+import { wantsCustomThemeInjectable } from "./state/wants-custom-theme.injectable";
 import { customThemeId } from "./themes/custom-theme-id";
 
 describe("theme-tweaker register-themes-with-host-map workaround", () => {
   let di: DiContainer;
   let lensThemes: Map<string, LensTheme>;
   let colorTheme: IObservableValue<ColorTheme>;
-  let run: () => void;
+  let wantsCustomTheme: IObservableValue<boolean>;
+
+  const flushMicrotasks = () => new Promise<void>((resolve) => setImmediate(resolve));
+
+  const runWorkaround = async () => {
+    await di.inject(registerThemesWithHostMapInjectable).run();
+  };
 
   beforeEach(async () => {
     di = createContainer("irrelevant");
@@ -34,94 +41,79 @@ describe("theme-tweaker register-themes-with-host-map workaround", () => {
 
     lensThemes = di.inject(lensThemesInjectionToken);
     colorTheme = di.inject(colorThemeInjectable);
-    run = di.inject(registerThemesWithHostMapInjectable).run;
+    wantsCustomTheme = await di.inject(wantsCustomThemeInjectable);
 
-    // Simulate the production startup ordering: host builds its theme Map before the
-    // experiment's theme declarations make it in.
+    // Simulate the production startup ordering: the host has already built its theme
+    // Map and rejected the persisted "theme-tweaker-custom" via its validator, so
+    // colorTheme has been reset to the default while wantsCustomTheme survived in our
+    // own persisted state.
     lensThemes.delete(customThemeId);
+    colorTheme.set({ matchSystemTheme: false, lensThemeId: "lens-dark" });
   });
 
-  describe("when persisted colorTheme points at a theme the host's map is missing", () => {
-    let colorThemeNotifications: number;
+  it("patches missing experiment themes into the host's map", async () => {
+    await runWorkaround();
 
-    beforeEach(() => {
-      colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId });
+    expect(lensThemes.has(customThemeId)).toBe(true);
+  });
 
-      colorThemeNotifications = 0;
-      const stop = autorun(() => {
-        colorTheme.get();
-        colorThemeNotifications += 1;
+  describe("when the user last applied a Theme Tweaker theme", () => {
+    beforeEach(async () => {
+      wantsCustomTheme.set(true);
+      await runWorkaround();
+    });
+
+    it("restores colorTheme to the custom theme id", () => {
+      expect(colorTheme.get()).toEqual({
+        matchSystemTheme: false,
+        lensThemeId: customThemeId,
       });
-
-      // Discount the initial autorun tick so we only count post-run notifications.
-      const baseline = colorThemeNotifications;
-
-      run();
-      stop();
-
-      colorThemeNotifications -= baseline;
-    });
-
-    it("patches the missing theme into the host's map", () => {
-      expect(lensThemes.has(customThemeId)).toBe(true);
-    });
-
-    it("nudges colorTheme so the host's activeTheme reaction re-fires", () => {
-      expect(colorThemeNotifications).toBeGreaterThan(0);
     });
   });
 
-  describe("when persisted colorTheme points at a theme the host already knows", () => {
-    let colorThemeNotifications: number;
+  describe("when the user is not on a Theme Tweaker theme", () => {
+    beforeEach(async () => {
+      wantsCustomTheme.set(false);
+      await runWorkaround();
+    });
 
-    beforeEach(() => {
-      colorTheme.set({ matchSystemTheme: false, lensThemeId: "some-builtin-theme" });
-
-      colorThemeNotifications = 0;
-      const stop = autorun(() => {
-        colorTheme.get();
-        colorThemeNotifications += 1;
+    it("leaves colorTheme alone", () => {
+      expect(colorTheme.get()).toEqual({
+        matchSystemTheme: false,
+        lensThemeId: "lens-dark",
       });
-
-      const baseline = colorThemeNotifications;
-
-      run();
-      stop();
-
-      colorThemeNotifications -= baseline;
-    });
-
-    it("still patches the missing custom theme into the host's map", () => {
-      expect(lensThemes.has(customThemeId)).toBe(true);
-    });
-
-    it("does not nudge colorTheme", () => {
-      expect(colorThemeNotifications).toBe(0);
     });
   });
 
-  describe("when persisted colorTheme is matchSystemTheme", () => {
-    let colorThemeNotifications: number;
-
-    beforeEach(() => {
-      colorTheme.set({ matchSystemTheme: true });
-
-      colorThemeNotifications = 0;
-      const stop = autorun(() => {
-        colorTheme.get();
-        colorThemeNotifications += 1;
-      });
-
-      const baseline = colorThemeNotifications;
-
-      run();
-      stop();
-
-      colorThemeNotifications -= baseline;
+  describe("the wantsCustomTheme sync reaction", () => {
+    beforeEach(async () => {
+      wantsCustomTheme.set(false);
+      await runWorkaround();
     });
 
-    it("does not nudge colorTheme — host resolves by type, not by id", () => {
-      expect(colorThemeNotifications).toBe(0);
+    it("sets the flag to true when colorTheme switches to the custom theme", async () => {
+      runInAction(() => colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId }));
+      await flushMicrotasks();
+
+      expect(wantsCustomTheme.get()).toBe(true);
+    });
+
+    it("clears the flag when colorTheme switches to a built-in theme", async () => {
+      runInAction(() => colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId }));
+      await flushMicrotasks();
+      runInAction(() => colorTheme.set({ matchSystemTheme: false, lensThemeId: "lens-light" }));
+      await flushMicrotasks();
+
+      expect(wantsCustomTheme.get()).toBe(false);
+    });
+
+    it("clears the flag when the user enables matchSystemTheme", async () => {
+      runInAction(() => colorTheme.set({ matchSystemTheme: false, lensThemeId: customThemeId }));
+      await flushMicrotasks();
+      runInAction(() => colorTheme.set({ matchSystemTheme: true }));
+      await flushMicrotasks();
+
+      expect(wantsCustomTheme.get()).toBe(false);
     });
   });
 });
