@@ -1,0 +1,77 @@
+name: Auto Release
+
+# Cuts an experiments release for every Lens Desktop release: the monorepo
+# sends lens-release-published with { lensVersion }; this pushes the next tag
+# and dispatches release.yml on it. The tag-ref indirection is load-bearing —
+# the S3 OIDC role only trusts tag refs, and repository_dispatch runs on main.
+on:
+  repository_dispatch:
+    types:
+      - lens-release-published
+
+permissions:
+  contents: write # push the release tag
+  actions: write # dispatch release.yml
+
+# Serialize runs so two concurrent dispatches cannot compute the same tag.
+concurrency:
+  group: auto-release
+  cancel-in-progress: false
+
+jobs:
+  tag-and-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine release parameters
+        id: params
+        # -internal builds are employee-only → dev experiments; else prod.
+        run: |
+          lens_version="${{ github.event.client_payload.lensVersion }}"
+
+          if [ -z "$lens_version" ]; then
+            echo "client_payload.lensVersion is required" >&2
+            exit 1
+          fi
+
+          case "$lens_version" in
+            *-internal) channel="dev" ;;
+            *) channel="prod" ;;
+          esac
+
+          echo "lens_version=$lens_version" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+      - name: Compute next release tag
+        id: tag
+        # <lensVersion>.<numericSuffix> (see .knowledge/cross-repo.md);
+        # highest existing suffix + 1, starting at 1.
+        run: |
+          lens_version="${{ steps.params.outputs.lens_version }}"
+          next=1
+
+          while read -r _sha ref; do
+            tag="${ref#refs/tags/}"
+            suffix="${tag#"${lens_version}".}"
+
+            if [ "$suffix" != "$tag" ] && [[ "$suffix" =~ ^[0-9]+$ ]] && (( suffix >= next )); then
+              next=$((suffix + 1))
+            fi
+          done < <(git ls-remote --tags origin "refs/tags/${lens_version}.*")
+
+          echo "tag=${lens_version}.${next}" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        run: |
+          git tag "${{ steps.tag.outputs.tag }}" "${{ github.sha }}"
+          git push origin "refs/tags/${{ steps.tag.outputs.tag }}"
+
+      - name: Dispatch release workflow on the tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run release.yml \
+            --ref "refs/tags/${{ steps.tag.outputs.tag }}" \
+            -f tag="${{ steps.tag.outputs.tag }}" \
+            -f channel="${{ steps.params.outputs.channel }}"
