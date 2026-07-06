@@ -11,6 +11,7 @@ Some monorepo files are part of a **cross-repo contract** with this repo — a c
 | Signing algorithm (Ed25519 over the fetched content's UTF-8 bytes, signature base64-encoded) | `packages/features/experimental-features/lab-experiment/src/_private/verify-ed25519-signature.injectable.ts` | `infrastructure/sign/sign-bundle.ts` |
 | SHA-256 checksum over the fetched content's UTF-8 bytes | `packages/features/experimental-features/lab-experiment/src/_private/verify-sha256-checksum.injectable.ts` | `infrastructure/publish/generate-manifest.ts` |
 | Load mechanism: ephemeral extension | `installExtensionAsEphemeralDirectlyInjectionToken` from `@lensapp/dynamic-features-contracts` | The experiment bundle shape that mechanism expects |
+| Release trigger: `repository_dispatch` event `lens-release-published` with payload `{ lensVersion }` | `notify-experiments` job in `.github/workflows/release-create.yaml` (authenticated by the `EXPERIMENTS_DISPATCH_TOKEN` secret) | `.github/workflows/auto-release.yml` |
 
 ## Key rotation
 

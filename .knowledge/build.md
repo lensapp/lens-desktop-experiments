@@ -46,12 +46,14 @@ This path bypasses signing / manifest / catalog — it does not validate the sig
 
 Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The Lens Desktop client requires this exact shape — a `v` prefix or anything else will not be discoverable by clients.
 
-Releases are **manual**. Push the tag, then trigger `.github/workflows/release.yml` via `workflow_dispatch` with two inputs:
+**Automatic path (default):** the lens-desktop-monorepo release pipeline sends a `repository_dispatch` event (`lens-release-published`, payload `{ lensVersion }`) after each Lens Desktop release. `.github/workflows/auto-release.yml` receives it, computes the next tag suffix for that Lens version, pushes the tag, and dispatches `release.yml` on the tag ref. The channel is derived from the version suffix: `-internal` → `dev`, everything else → `prod`.
+
+**Manual path:** push the tag, then trigger `.github/workflows/release.yml` via `workflow_dispatch` with two inputs:
 
 - `tag` — the pushed tag (also used as the ref when dispatching, so OIDC trust accepts the run).
 - `channel` — `prod` or `dev`. Only experiments whose `experiment.channels` array contains the chosen channel are built, signed, and included in the manifest.
 
-Bare tag pushes do **not** publish. Forcing an explicit channel selection per release prevents accidentally shipping an in-progress experiment to `prod`.
+Bare tag pushes do **not** publish. An explicit channel per release (chosen manually or derived from the Lens version) prevents accidentally shipping an in-progress experiment to `prod`.
 
 `release.yml` builds, signs, and generates the manifest, then publishes to two destinations, each with its own pointer file:
 
