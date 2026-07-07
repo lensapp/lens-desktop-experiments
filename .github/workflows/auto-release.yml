@@ -13,9 +13,10 @@ permissions:
   contents: write # push the release tag
   actions: write # dispatch release.yml
 
-# Serialize runs so two concurrent dispatches cannot compute the same tag.
+# Serialize runs per Lens version so concurrent dispatches for the same
+# version cannot compute the same tag; distinct versions proceed in parallel.
 concurrency:
-  group: auto-release
+  group: auto-release-${{ github.event.client_payload.lensVersion }}
   cancel-in-progress: false
 
 jobs:
@@ -27,51 +28,67 @@ jobs:
       - name: Determine release parameters
         id: params
         # -internal builds are employee-only → dev experiments; else prod.
+        env:
+          LENS_VERSION: ${{ github.event.client_payload.lensVersion }}
         run: |
-          lens_version="${{ github.event.client_payload.lensVersion }}"
-
-          if [ -z "$lens_version" ]; then
-            echo "client_payload.lensVersion is required" >&2
+          if ! [[ "$LENS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+)?$ ]]; then
+            echo "Invalid client_payload.lensVersion: '$LENS_VERSION'" >&2
             exit 1
           fi
 
-          case "$lens_version" in
+          case "$LENS_VERSION" in
             *-internal) channel="dev" ;;
             *) channel="prod" ;;
           esac
 
-          echo "lens_version=$lens_version" >> "$GITHUB_OUTPUT"
+          echo "lens_version=$LENS_VERSION" >> "$GITHUB_OUTPUT"
           echo "channel=$channel" >> "$GITHUB_OUTPUT"
 
       - name: Compute next release tag
         id: tag
         # <lensVersion>.<numericSuffix> (see .knowledge/cross-repo.md);
         # highest existing suffix + 1, starting at 1.
+        env:
+          LENS_VERSION: ${{ steps.params.outputs.lens_version }}
         run: |
-          lens_version="${{ steps.params.outputs.lens_version }}"
+          tags="$(git ls-remote --tags origin "refs/tags/${LENS_VERSION}.*")"
           next=1
 
           while read -r _sha ref; do
             tag="${ref#refs/tags/}"
-            suffix="${tag#"${lens_version}".}"
+            suffix="${tag#"${LENS_VERSION}".}"
 
             if [ "$suffix" != "$tag" ] && [[ "$suffix" =~ ^[0-9]+$ ]] && (( suffix >= next )); then
               next=$((suffix + 1))
             fi
-          done < <(git ls-remote --tags origin "refs/tags/${lens_version}.*")
+          done <<< "$tags"
 
-          echo "tag=${lens_version}.${next}" >> "$GITHUB_OUTPUT"
+          echo "tag=${LENS_VERSION}.${next}" >> "$GITHUB_OUTPUT"
 
       - name: Create and push tag
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          git tag "${{ steps.tag.outputs.tag }}" "${{ github.sha }}"
-          git push origin "refs/tags/${{ steps.tag.outputs.tag }}"
+          git tag "$TAG" "$GITHUB_SHA"
+          git push origin "refs/tags/$TAG"
 
       - name: Dispatch release workflow on the tag
+        # Retried: the API may briefly not know the just-pushed tag ref.
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          CHANNEL: ${{ steps.params.outputs.channel }}
         run: |
-          gh workflow run release.yml \
-            --ref "refs/tags/${{ steps.tag.outputs.tag }}" \
-            -f tag="${{ steps.tag.outputs.tag }}" \
-            -f channel="${{ steps.params.outputs.channel }}"
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run release.yml \
+              --ref "refs/tags/$TAG" \
+              -f tag="$TAG" \
+              -f channel="$CHANNEL"; then
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "Failed to dispatch release.yml for $TAG" >&2
+          exit 1
