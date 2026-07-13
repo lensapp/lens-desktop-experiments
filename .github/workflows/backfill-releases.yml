@@ -1,0 +1,115 @@
+name: Backfill Releases
+
+# Re-releases current experiments for previously released Lens versions —
+# run after merging an experiment change that should reach users on existing
+# Lens versions. Dispatches auto-release.yml once per active version; a
+# version is active when its latest- pointer tag falls within since-days.
+# Versions whose newest release was already cut from current HEAD are skipped.
+on:
+  workflow_dispatch:
+    inputs:
+      since-days:
+        description: "Backfill Lens versions released within the last N days"
+        required: false
+        default: "90"
+      dry-run:
+        description: "Only list the versions that would be backfilled"
+        type: boolean
+        default: false
+
+permissions:
+  actions: write # dispatch auto-release.yml
+
+concurrency:
+  group: backfill-releases
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine active Lens versions
+        id: versions
+        env:
+          SINCE_DAYS: ${{ github.event.inputs.since-days }}
+        run: |
+          if ! [[ "$SINCE_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "since-days must be a number, got '$SINCE_DAYS'" >&2
+            exit 1
+          fi
+
+          tags_file="$(mktemp)"
+          git ls-remote --tags origin > "$tags_file"
+
+          head_sha="$(git rev-parse HEAD)"
+          cutoff="$(date -u -d "-${SINCE_DAYS} days" +%Y%m%d)"
+          tomorrow="$(date -u -d "+1 day" +%Y%m%d)"
+          versions=""
+
+          while read -r _sha ref; do
+            tag="${ref#refs/tags/}"
+
+            case "$tag" in
+              latest-*) version="${tag#latest-}" ;;
+              *) continue ;;
+            esac
+
+            # Lens versions encode their release date: <year>.<month>.<day><hhmm>.
+            base="${version%%-*}"
+            IFS=. read -r year month dayhhmm <<< "$base"
+            day="${dayhhmm%????}"
+
+            if ! [[ "$year" =~ ^[0-9]+$ && "$month" =~ ^[0-9]+$ && "$day" =~ ^[0-9]+$ ]]; then
+              echo "skip $version (undated version, likely a test tag)"
+              continue
+            fi
+
+            version_date="$(printf '%04d%02d%02d' "$year" "$month" "$day")"
+
+            if [ "$version_date" -lt "$cutoff" ] || [ "$version_date" -gt "$tomorrow" ]; then
+              echo "skip $version (outside the ${SINCE_DAYS}-day window)"
+              continue
+            fi
+
+            # Find the commit of the version's newest release tag; if it is
+            # current HEAD there is nothing new to release for this version.
+            newest_suffix=0
+            newest_sha=""
+
+            while read -r sha ref2; do
+              tag2="${ref2#refs/tags/}"
+              suffix="${tag2#"${version}".}"
+
+              if [ "$suffix" != "$tag2" ] && [[ "$suffix" =~ ^[0-9]+$ ]] && (( suffix > newest_suffix )); then
+                newest_suffix=$suffix
+                newest_sha=$sha
+              fi
+            done < "$tags_file"
+
+            if [ "$newest_sha" = "$head_sha" ]; then
+              echo "skip $version (already released from current HEAD)"
+              continue
+            fi
+
+            echo "backfill $version"
+            versions="$versions $version"
+          done < "$tags_file"
+
+          echo "versions=${versions# }" >> "$GITHUB_OUTPUT"
+
+      - name: Dispatch auto-release per version
+        if: ${{ github.event.inputs.dry-run != 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSIONS: ${{ steps.versions.outputs.versions }}
+        run: |
+          if [ -z "$VERSIONS" ]; then
+            echo "Nothing to backfill"
+            exit 0
+          fi
+
+          for version in $VERSIONS; do
+            gh workflow run auto-release.yml -f lens_version="$version"
+          done

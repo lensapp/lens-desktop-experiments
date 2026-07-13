@@ -48,6 +48,8 @@ Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The Lens Desk
 
 **Automatic path (default):** the lens-desktop-monorepo release pipeline sends a `repository_dispatch` event (`lens-release-published`, payload `{ lensVersion }`) after each Lens Desktop release. `.github/workflows/auto-release.yml` receives it, computes the next tag suffix for that Lens version, pushes the tag, and dispatches `release.yml` on the tag ref. The channel is derived from the version suffix: `-internal` → `dev`, everything else → `prod`.
 
+**Backfill path:** after merging an experiment change that should reach users on already-released Lens versions, trigger `.github/workflows/backfill-releases.yml`. It dispatches `auto-release.yml` for every Lens version whose pointer tag falls within `since-days` (default 90), skipping versions already released from current HEAD. Supports `dry-run`.
+
 **Manual path:** push the tag, then trigger `.github/workflows/release.yml` via `workflow_dispatch` with two inputs:
 
 - `tag` — the pushed tag (also used as the ref when dispatching, so OIDC trust accepts the run).
