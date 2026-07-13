@@ -63,21 +63,27 @@ jobs:
               *) continue ;;
             esac
 
-            # Lens versions encode their release date: <year>.<month>.<day><hhmm>.
+            # Released versions always carry a channel suffix and encode their
+            # release date: <year>.<month>.<day><hhmm>-<channel>. A bare x.x.x
+            # is the dev-build placeholder from lens-desktop/package.json —
+            # always active, so only date-filter suffixed versions.
             base="${version%%-*}"
-            IFS=. read -r year month dayhhmm <<< "$base"
-            day="${dayhhmm%????}"
 
-            if ! [[ "$year" =~ ^[0-9]+$ && "$month" =~ ^[0-9]+$ && "$day" =~ ^[0-9]+$ ]]; then
-              note "skip $version (undated version, likely a test tag)"
-              continue
-            fi
+            if [ "$base" != "$version" ]; then
+              IFS=. read -r year month dayhhmm <<< "$base"
+              day="${dayhhmm%????}"
 
-            version_date="$(printf '%04d%02d%02d' "$year" "$month" "$day")"
+              if ! [[ "$year" =~ ^[0-9]+$ && "$month" =~ ^[0-9]+$ && "$day" =~ ^[0-9]+$ ]]; then
+                note "skip $version (release date not parseable from version)"
+                continue
+              fi
 
-            if [ "$version_date" -lt "$cutoff" ] || [ "$version_date" -gt "$tomorrow" ]; then
-              note "skip $version (outside the ${SINCE_DAYS}-day window)"
-              continue
+              version_date="$(printf '%04d%02d%02d' "$year" "$month" "$day")"
+
+              if [ "$version_date" -lt "$cutoff" ] || [ "$version_date" -gt "$tomorrow" ]; then
+                note "skip $version (outside the ${SINCE_DAYS}-day window)"
+                continue
+              fi
             fi
 
             # Find the commit of the version's newest release tag; if it is

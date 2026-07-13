@@ -34,7 +34,10 @@ jobs:
 
       - name: Determine release parameters
         id: params
-        # -internal builds are employee-only → dev experiments; else prod.
+        # Released versions always carry a channel suffix (the release
+        # pipeline appends -latest/-beta/-alpha/-internal); a bare x.x.x is
+        # the dev-build placeholder from lens-desktop/package.json. -internal
+        # and dev builds are employee-only → dev experiments; else prod.
         env:
           LENS_VERSION: ${{ github.event.client_payload.lensVersion || github.event.inputs.lens_version }}
         run: |
@@ -45,7 +48,8 @@ jobs:
 
           case "$LENS_VERSION" in
             *-internal) channel="dev" ;;
-            *) channel="prod" ;;
+            *-*) channel="prod" ;;
+            *) channel="dev" ;;
           esac
 
           echo "lens_version=$LENS_VERSION" >> "$GITHUB_OUTPUT"
