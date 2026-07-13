@@ -1,10 +1,17 @@
 name: Auto Release
 
-# Cuts an experiments release for every Lens Desktop release: the monorepo
-# sends lens-release-published with { lensVersion }; this pushes the next tag
-# and dispatches release.yml on it. The tag-ref indirection is load-bearing —
-# the S3 OIDC role only trusts tag refs, and repository_dispatch runs on main.
+# Cuts an experiments release for a Lens Desktop version: the monorepo sends
+# lens-release-published with { lensVersion } for every Lens release, and
+# backfill-releases.yml (or a human) dispatches it manually; this pushes the
+# next tag and dispatches release.yml on it. The tag-ref indirection is
+# load-bearing — the S3 OIDC role only trusts tag refs, and neither
+# repository_dispatch nor workflow_dispatch runs on one.
 on:
+  workflow_dispatch:
+    inputs:
+      lens_version:
+        description: "Lens version to cut a release for (e.g. 2025.12.301234-latest)"
+        required: true
   repository_dispatch:
     types:
       - lens-release-published
@@ -16,7 +23,7 @@ permissions:
 # Serialize runs per Lens version so concurrent dispatches for the same
 # version cannot compute the same tag; distinct versions proceed in parallel.
 concurrency:
-  group: auto-release-${{ github.event.client_payload.lensVersion }}
+  group: auto-release-${{ github.event.client_payload.lensVersion || github.event.inputs.lens_version }}
   cancel-in-progress: false
 
 jobs:
@@ -29,10 +36,10 @@ jobs:
         id: params
         # -internal builds are employee-only → dev experiments; else prod.
         env:
-          LENS_VERSION: ${{ github.event.client_payload.lensVersion }}
+          LENS_VERSION: ${{ github.event.client_payload.lensVersion || github.event.inputs.lens_version }}
         run: |
           if ! [[ "$LENS_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+)?$ ]]; then
-            echo "Invalid client_payload.lensVersion: '$LENS_VERSION'" >&2
+            echo "Invalid lens version: '$LENS_VERSION'" >&2
             exit 1
           fi
 
