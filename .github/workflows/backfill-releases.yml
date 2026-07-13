@@ -40,6 +40,13 @@ jobs:
             exit 1
           fi
 
+          note() {
+            echo "$1"
+            echo "- $1" >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          echo "### Backfill plan (since-days: ${SINCE_DAYS})" >> "$GITHUB_STEP_SUMMARY"
+
           tags_file="$(mktemp)"
           git ls-remote --tags origin > "$tags_file"
 
@@ -62,14 +69,14 @@ jobs:
             day="${dayhhmm%????}"
 
             if ! [[ "$year" =~ ^[0-9]+$ && "$month" =~ ^[0-9]+$ && "$day" =~ ^[0-9]+$ ]]; then
-              echo "skip $version (undated version, likely a test tag)"
+              note "skip $version (undated version, likely a test tag)"
               continue
             fi
 
             version_date="$(printf '%04d%02d%02d' "$year" "$month" "$day")"
 
             if [ "$version_date" -lt "$cutoff" ] || [ "$version_date" -gt "$tomorrow" ]; then
-              echo "skip $version (outside the ${SINCE_DAYS}-day window)"
+              note "skip $version (outside the ${SINCE_DAYS}-day window)"
               continue
             fi
 
@@ -89,11 +96,11 @@ jobs:
             done < "$tags_file"
 
             if [ "$newest_sha" = "$head_sha" ]; then
-              echo "skip $version (already released from current HEAD)"
+              note "skip $version (already released from current HEAD)"
               continue
             fi
 
-            echo "backfill $version"
+            note "backfill $version"
             versions="$versions $version"
           done < "$tags_file"
 
@@ -110,6 +117,18 @@ jobs:
             exit 0
           fi
 
+          failed=""
+
           for version in $VERSIONS; do
-            gh workflow run auto-release.yml -f lens_version="$version"
+            if gh workflow run auto-release.yml -f lens_version="$version"; then
+              echo "dispatched $version"
+            else
+              echo "::warning::dispatch failed for $version"
+              failed="$failed $version"
+            fi
           done
+
+          if [ -n "$failed" ]; then
+            echo "Failed to dispatch:$failed" >&2
+            exit 1
+          fi
