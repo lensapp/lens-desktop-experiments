@@ -4,14 +4,14 @@ exports[`user-info-dev-tool user info button given access token and license exis
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--s"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--s___9mYzS"
       >
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-user-info-button-test="true"
           role="button"
@@ -21,7 +21,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
           User Info
         </button>
         <div
-          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+          class="padding-module__padding__left--s___ksigr border-module__borderLeft__width--xxs___ojAap border-module__borderLeft__color--grey40___yIr0J border-module__border__style--solid___1Qy1J"
         >
           <div
             style="display: flex; gap: 8px; align-items: center;"
@@ -117,7 +117,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
           </div>
         </div>
         <div
-          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+          class="padding-module__padding__left--s___ksigr border-module__borderLeft__width--xxs___ojAap border-module__borderLeft__color--grey40___yIr0J border-module__border__style--solid___1Qy1J"
         >
           <div
             style="display: flex; gap: 4px; align-items: center;"
@@ -138,10 +138,10 @@ exports[`user-info-dev-tool user info button given access token and license exis
           </div>
         </div>
         <div
-          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+          class="padding-module__padding__left--s___ksigr border-module__borderLeft__width--xxs___ojAap border-module__borderLeft__color--grey40___yIr0J border-module__border__style--solid___1Qy1J"
         >
           <label
-            class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+            class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
             style="flex-shrink: 0;"
           >
             <input
@@ -152,10 +152,10 @@ exports[`user-info-dev-tool user info button given access token and license exis
           </label>
         </div>
         <div
-          class="padding__left--s borderLeft__width--xxs borderLeft__color--grey40 border__style--solid"
+          class="padding-module__padding__left--s___ksigr border-module__borderLeft__width--xxs___ojAap border-module__borderLeft__color--grey40___yIr0J border-module__border__style--solid___1Qy1J"
         >
           <label
-            class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+            class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
             style="flex-shrink: 0;"
           >
             Expires:
@@ -170,7 +170,7 @@ exports[`user-info-dev-tool user info button given access token and license exis
           style="margin-left: auto;"
         >
           <button
-            class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+            class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
             data-user-info-close-button-test="true"
             style="flex-shrink: 0;"
           >
@@ -187,17 +187,17 @@ exports[`user-info-dev-tool user info button given access token does not exist w
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--s"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--s___9mYzS"
       >
         <div
           style="margin-left: auto;"
         >
           <button
-            class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+            class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
             data-user-info-close-button-test="true"
             style="flex-shrink: 0;"
           >

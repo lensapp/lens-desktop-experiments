@@ -1,8 +1,8 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { commandsInjectionToken } from "@lensapp/command-palette-renderer";
 import { computed } from "mobx";
 import { devToolsInjectable } from "./dev-tools.injectable";
-import { pipeline } from "@lensapp/fp";
+import { pipeline } from "@k8slens/fp";
 import { flatMap, map } from "lodash/fp";
 import { devToolActionsInjectable } from "./dev-tool-actions.injectable";
 

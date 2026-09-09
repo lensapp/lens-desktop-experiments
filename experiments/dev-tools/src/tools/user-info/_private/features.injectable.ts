@@ -1,7 +1,7 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { computed, type IComputedValue, reaction, runInAction } from "mobx";
 import { lensIdLicenseInjectionToken } from "@lensapp/lens-id";
-import type { Enableable } from "@lensapp/composable-responsibilities";
+import type { Enableable } from "@k8slens/composable-responsibilities";
 import { uniq } from "lodash";
 import { involveInGracefulCloseOfApplicationInjectionToken } from "@lensapp/with-auto-dispose";
 import { persistedFeaturesStateInjectable } from "./persisted-features-state.injectable";

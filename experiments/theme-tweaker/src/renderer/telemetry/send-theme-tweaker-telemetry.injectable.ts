@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { sendTelemetryEventInjectionToken } from "@lensapp/telemetry";
 import { deferAwait } from "@lensapp/utilities";
 import type { ThemeTweakerTelemetryEvent } from "./theme-tweaker-telemetry-event";

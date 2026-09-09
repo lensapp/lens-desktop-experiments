@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { lensIdLicenseServiceInjectionToken, substituteFeaturesChannel } from "@lensapp/lens-id";
 import type { EnableableFeature } from "./features.injectable";
 import { sendMessageToChannelInjectionToken } from "@lensapp/messaging";

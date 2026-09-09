@@ -1,6 +1,6 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
-import { registerFeature } from "@lensapp/feature-core";
-import { getStrictOverrideOf } from "@lensapp/test-utils";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
+import { registerFeature } from "@k8slens/feature-core";
+import { getStrictOverrideOf } from "@k8slens/test-utils";
 import { getPersistedInjectionToken, type Persisted } from "@lensapp/persisted-state";
 import { lensThemesInjectionToken, type LensTheme } from "@lensapp/theme";
 import { colorThemeInjectable, type ColorTheme } from "@lensapp/user-preferences";

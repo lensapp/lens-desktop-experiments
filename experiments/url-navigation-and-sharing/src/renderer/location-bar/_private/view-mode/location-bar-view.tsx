@@ -1,4 +1,4 @@
-import { ClickableDiv, Div, Span } from "@lensapp/element-components";
+import { ClickableDiv, Div, Span } from "@k8slens/element-components";
 import React from "react";
 
 const segmentSeparator = "/";

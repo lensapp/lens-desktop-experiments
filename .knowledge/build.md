@@ -5,15 +5,15 @@
 `infrastructure/build/esbuild.config.ts` marks these as external; the bundle imports them from the host DI container's module graph at load time:
 
 ```
-node:* builtins, @lensapp/*, mobx, zod, electron, react, react-dom
+node:* builtins, @k8slens/*, @lensapp/*, mobx, zod, electron, react, react-dom
 ```
 
-Anything else you import **will be bundled into `dist/index.js`**. Keep bundles small — prefer host-provided `@lensapp/*` packages over re-implementing.
+Anything else you import **will be bundled into `dist/index.js`**. Keep bundles small — prefer host-provided packages over re-implementing. Both host scopes must stay external: bundling a copy of `@k8slens/injectable` would give the experiment its own DI container and break injection-token identity with the host.
 
 ## Commands
 
 ```bash
-# Install — requires GitHub Packages auth for @lensapp scope
+# Install — requires GitHub Packages auth for the @lensapp scope (@k8slens comes from npmjs)
 npm install
 
 # Build
@@ -30,7 +30,22 @@ npm run sign                                 # requires EXPERIMENT_SIGNING_PRIVA
 npm run manifest                             # writes dist/manifest.json
 ```
 
-Tests use `jest-fixed-jsdom` + `@lensapp/package-build/transformer`, scoped by `testMatch: ["**/experiments/*/src/**/*.test.{ts,tsx}"]`.
+Tests use `jest-fixed-jsdom` + `@k8slens/package-build/transformer`, scoped by `testMatch: ["**/experiments/*/src/**/*.test.{ts,tsx}"]`.
+
+## The @lensapp → @k8slens Resolution Bridge (Temporary)
+
+`jest.config.js` (`moduleNameMapper`) and `tsconfig.base.json` (`compilerOptions.paths`) both redirect a handful of `@lensapp/*` specifiers to their `@k8slens/*` counterparts, from one shared list per file:
+
+```
+composable-responsibilities, element-components, feature-core, fp,
+injectable, injectable-extension-for-mobx, injectable-react
+```
+
+Why: the monorepo renamed these packages and published them under `@k8slens`, but has **not** yet republished the `@lensapp/*` packages that depend on them — the versions on GitHub Packages still `require("@lensapp/injectable")`. Without the redirect, a local install ends up with two copies of the DI machinery: `tsc` reports the two `Injectable` types as incompatible, and jest registers every injectable twice.
+
+The bridge is dev-tooling only. It does not touch what is published, and the built bundle is unaffected — both scopes are external there.
+
+**Remove it** (all three places: the two config lists and this section) once the `@lensapp/*` packages are republished from the migrated monorepo. Until then, three `dev-tools` popover interaction tests fail: `@lensapp/button` and friends are prebuilt against `element-components@3.3.1`, which dropped two features and moved to injectable2 in `3.4.0`, so the mixed pair does not render a working popover in jsdom. That mix only exists locally — a Lens release ships one consistent set.
 
 ## Local Dev Loop In Lens Desktop
 

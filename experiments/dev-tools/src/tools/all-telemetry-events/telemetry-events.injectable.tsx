@@ -1,5 +1,5 @@
-import { Button, Div } from "@lensapp/element-components";
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { Button, Div } from "@k8slens/element-components";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { observer } from "mobx-react";
 import { TelemetryEventPopover } from "./_private/telemetry-event-popover";

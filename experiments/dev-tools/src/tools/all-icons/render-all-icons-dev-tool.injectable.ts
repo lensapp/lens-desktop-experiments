@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import { AllIcons } from "./render-all-icons.injectable";
 

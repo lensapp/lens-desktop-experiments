@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { anytimeAfterApplicationIsLoadedInjectionToken } from "@lensapp/application";
 import { lensThemeDeclarationInjectionToken, lensThemesInjectionToken } from "@lensapp/theme";
 import { colorThemeInjectable } from "@lensapp/user-preferences";

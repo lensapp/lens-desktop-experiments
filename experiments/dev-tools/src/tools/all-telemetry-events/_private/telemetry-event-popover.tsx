@@ -1,4 +1,4 @@
-import { Div } from "@lensapp/element-components";
+import { Div } from "@k8slens/element-components";
 import type { TelemetryEvent } from "@lensapp/telemetry";
 
 export const TelemetryEventPopover = ({ event }: { event: TelemetryEvent }) => (

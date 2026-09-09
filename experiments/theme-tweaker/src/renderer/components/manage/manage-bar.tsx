@@ -1,4 +1,4 @@
-import { Div, Span } from "@lensapp/element-components";
+import { Div, Span } from "@k8slens/element-components";
 import { Button } from "@lensapp/button";
 import { Input } from "@lensapp/input";
 import { useEffect, useRef, useState } from "react";

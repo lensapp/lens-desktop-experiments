@@ -1,6 +1,5 @@
-import { getFeature } from "@lensapp/feature-core";
+import { getFeature, registerInjectablesFromModules } from "@k8slens/feature-core";
 import modulesWithInjectables from "./**/*.injectable.(ts|tsx)";
-import { registerInjectablesFromModules } from "@lensapp/utilities";
 import { topBarFeature } from "@lensapp/top-bar";
 import { kubernetesResourcesFeature } from "@lensapp/kubernetes-resources";
 import { mainViewFeature } from "@lensapp/main-view";
@@ -9,8 +8,7 @@ import { kubeObjectDetailsPanelFeature } from "@lensapp/kube-object-details-pane
 import { clusterCommonFeature } from "@lensapp/cluster-common";
 import { clusterSourceFeature } from "@lensapp/cluster-source";
 import { kubeResourceFeature } from "@lensapp/kube-resource";
-import { elementComponentFeature } from "@lensapp/element-components";
-import { iconFeature } from "@lensapp/icon";
+import { elementComponentFeature } from "@k8slens/element-components";
 import { messagingFeature } from "@lensapp/messaging";
 import { utilityFeature } from "@lensapp/utility-feature";
 import { electronFeature } from "@lensapp/electron";
@@ -21,7 +19,6 @@ import { lensSpacesFeature } from "@lensapp/lens-spaces";
 
 export const urlNavigationAndSharingRendererFeature = getFeature({
   id: "url-navigation-and-sharing-renderer",
-  tags: ["public", "renderer", "business"],
   register: (di) => registerInjectablesFromModules(di, modulesWithInjectables),
   dependencies: [
     topBarFeature,
@@ -33,7 +30,6 @@ export const urlNavigationAndSharingRendererFeature = getFeature({
     clusterSourceFeature,
     kubeResourceFeature,
     elementComponentFeature,
-    iconFeature,
     messagingFeature,
     utilityFeature,
     electronFeature,

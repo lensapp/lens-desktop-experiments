@@ -1,8 +1,8 @@
-import { getInjectable } from "@lensapp/injectable";
-import { computedInjectManyWithMetaInjectionToken } from "@lensapp/injectable-extension-for-mobx";
+import { getInjectable } from "@k8slens/injectable";
+import { computedInjectManyWithMetaInjectionToken } from "@k8slens/injectable-extension-for-mobx";
 import { computed } from "mobx";
 import { map } from "lodash/fp";
-import { pipeline } from "@lensapp/fp";
+import { pipeline } from "@k8slens/fp";
 import { devToolActionInjectionToken } from "./dev-tool-action";
 import { getKeyedSingletonLifecycle } from "@lensapp/utilities";
 

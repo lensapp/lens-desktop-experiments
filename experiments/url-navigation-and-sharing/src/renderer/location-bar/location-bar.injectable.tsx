@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { leftItemInjectionToken } from "@lensapp/top-bar";
 import { LocationBar } from "./_private/location-bar";
 

@@ -4,11 +4,11 @@ exports[`telemetry-events-dev-tool when rendered renders 1`] = `
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
       />
     </div>
   </div>
@@ -19,14 +19,14 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
       >
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-2/some-action-2"
           role="button"
@@ -41,7 +41,7 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
           some-action-2
         </button>
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-1/some-action-1"
           role="button"
@@ -59,15 +59,15 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
     </div>
   </div>
   <div
-    class="popover__overlay absolute"
+    class="popover-module__popover__overlay___TcKv- absolute-module__absolute___MX--Y"
     data-popover-overlay-test="true"
   >
     <div
-      class="popover__content"
+      class="popover-module__popover__content___UCUZ6"
       style="position: absolute; left: 0px; top: 0px; transform: translate(0px, -8px);"
     >
       <div
-        class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+        class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
         style="max-width: 650px;"
       >
         <div>
@@ -101,14 +101,14 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
       >
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-2/some-action-2"
           role="button"
@@ -123,7 +123,7 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
           some-action-2
         </button>
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-1/some-action-1"
           role="button"
@@ -141,15 +141,15 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent gi
     </div>
   </div>
   <div
-    class="popover__overlay absolute"
+    class="popover-module__popover__overlay___TcKv- absolute-module__absolute___MX--Y"
     data-popover-overlay-test="true"
   >
     <div
-      class="popover__content"
+      class="popover-module__popover__content___UCUZ6"
       style="position: absolute; left: 0px; top: 0px; transform: translate(0px, -8px);"
     >
       <div
-        class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+        class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
         style="max-width: 650px;"
       >
         <div>
@@ -178,14 +178,14 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent re
 <body>
   <div>
     <div
-      class="overflow__x--auto padding--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__x--auto___S6oVL padding-module__padding--xs___QwhaB border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; bottom: 0px; left: 0px; right: 0px; z-index: 999;"
     >
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__gap--xs"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__gap--xs___tt3So"
       >
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-2/some-action-2"
           role="button"
@@ -200,7 +200,7 @@ exports[`telemetry-events-dev-tool when rendered when telemetry event is sent re
           some-action-2
         </button>
         <button
-          class="padding__right--xs padding__left--xs border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80 pointer"
+          class="padding-module__padding__right--xs___kpsQP padding-module__padding__left--xs___dBc6X border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu pointer"
           data-cursor-test="pointer"
           data-telemetry-event-test="some-name-1/some-action-1"
           role="button"

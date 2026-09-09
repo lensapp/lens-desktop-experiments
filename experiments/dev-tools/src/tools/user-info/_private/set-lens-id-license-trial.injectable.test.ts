@@ -1,4 +1,4 @@
-import { createContainer, getInjectable, type DiContainer } from "@lensapp/injectable";
+import { createContainer, getInjectable, type DiContainer } from "@k8slens/injectable";
 import { computed } from "mobx";
 import { setLensIdLicenseTrialInjectable, type SetLensIdLicenseTrial } from "./set-lens-id-license-trial.injectable";
 import { lensIdLicenseServiceInjectionToken, substituteTrialChannel } from "@lensapp/lens-id";

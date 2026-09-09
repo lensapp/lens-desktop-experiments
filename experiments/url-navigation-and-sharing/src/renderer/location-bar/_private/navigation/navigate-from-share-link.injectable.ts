@@ -1,4 +1,4 @@
-import { getInjectable, getInjectionToken } from "@lensapp/injectable";
+import { getInjectable, getInjectionToken } from "@k8slens/injectable";
 import { getClusterAddressHash, getClusterServerChannel } from "@lensapp/share-common";
 import { requestClusterActivationInjectionToken, waitForClusterToBeReadyInjectionToken } from "@lensapp/cluster-common";
 import { requestChannelRequesterForInjectionToken } from "@lensapp/messaging";

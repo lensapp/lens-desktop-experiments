@@ -1,9 +1,9 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { devToolInjectionToken } from "./dev-tool";
-import { computedInjectManyInjectionToken } from "@lensapp/injectable-extension-for-mobx";
+import { computedInjectManyInjectionToken } from "@k8slens/injectable-extension-for-mobx";
 import { computed } from "mobx";
 import { orderBy } from "lodash/fp";
-import { pipeline } from "@lensapp/fp";
+import { pipeline } from "@k8slens/fp";
 
 export const devToolsInjectable = getInjectable({
   id: "dev-tools",

@@ -1,5 +1,5 @@
-import { createContainer, getInjectable, type DiContainer } from "@lensapp/injectable";
-import { registerFeature } from "@lensapp/feature-core";
+import { createContainer, getInjectable, type DiContainer } from "@k8slens/injectable";
+import { registerFeature } from "@k8slens/feature-core";
 import { devToolsFeature } from "./feature";
 import { renderFor } from "@lensapp/rendering-test-utils";
 import { DevToolsAsApplicationChild } from "./dev-tools-as-application-child.injectable";

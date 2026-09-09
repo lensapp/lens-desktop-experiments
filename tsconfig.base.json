@@ -13,7 +13,19 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "outDir": "dist",
-    "rootDir": "."
+    "rootDir": ".",
+    // Published @lensapp/* packages are still pre-rename builds importing the DI
+    // packages from @lensapp. Resolving those specifiers to the single @k8slens copy
+    // keeps one set of types. Drop once those packages are republished against @k8slens.
+    "paths": {
+      "@lensapp/composable-responsibilities": ["./node_modules/@k8slens/composable-responsibilities"],
+      "@lensapp/element-components": ["./node_modules/@k8slens/element-components"],
+      "@lensapp/feature-core": ["./node_modules/@k8slens/feature-core"],
+      "@lensapp/fp": ["./node_modules/@k8slens/fp"],
+      "@lensapp/injectable": ["./node_modules/@k8slens/injectable"],
+      "@lensapp/injectable-extension-for-mobx": ["./node_modules/@k8slens/injectable-extension-for-mobx"],
+      "@lensapp/injectable-react": ["./node_modules/@k8slens/injectable-react"]
+    }
   },
   "exclude": ["node_modules", "dist"]
 }

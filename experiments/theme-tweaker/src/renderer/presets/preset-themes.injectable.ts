@@ -1,4 +1,4 @@
-import { getInjectable, getInjectableBunch } from "@lensapp/injectable";
+import { getInjectable, getInjectableBunch } from "@k8slens/injectable";
 import { lensThemeDeclarationInjectionToken, type LensTheme } from "@lensapp/theme";
 import { presets, type PresetDefinition } from "./presets-catalog";
 import { darkThemeDefaults, darkTerminalDefaults } from "../dark-theme-defaults";

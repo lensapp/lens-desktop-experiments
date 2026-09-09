@@ -1,4 +1,4 @@
-import { Button, Div, Span } from "@lensapp/element-components";
+import { Button, Div, Span } from "@k8slens/element-components";
 import { Input, SearchInput } from "@lensapp/input";
 import { observer } from "mobx-react";
 import { useState } from "react";

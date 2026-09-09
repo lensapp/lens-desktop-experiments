@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { observable } from "mobx";
 
 export const visibleDevToolsInjectable = getInjectable({

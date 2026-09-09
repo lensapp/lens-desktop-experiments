@@ -1,4 +1,4 @@
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { reactApplicationChildInjectionToken } from "@lensapp/react-application";
 import { observer } from "mobx-react";

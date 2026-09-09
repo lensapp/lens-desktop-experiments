@@ -1,5 +1,5 @@
-import { Button, Div } from "@lensapp/element-components";
-import { CheckIcon, ContentCopyIcon, ShareIcon } from "@lensapp/icon";
+import { Button, Div } from "@k8slens/element-components";
+import { CheckIcon, ContentCopyIcon, ShareIcon } from "@k8slens/icon";
 import { useCallback, useEffect, useState } from "react";
 import { type ClusterToolbarActionArgs, useClusterToolbarActionsModel } from "./use-cluster-toolbar-actions-model";
 

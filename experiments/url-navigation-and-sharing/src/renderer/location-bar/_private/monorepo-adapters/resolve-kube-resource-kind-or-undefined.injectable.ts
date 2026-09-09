@@ -1,4 +1,4 @@
-import { getInjectable, getInjectionToken } from "@lensapp/injectable";
+import { getInjectable, getInjectionToken } from "@k8slens/injectable";
 import { type KubeResourceKind, kubeResourceKindByPluralNameInjectionToken } from "@lensapp/kube-resource";
 
 export type ResolveKubeResourceKindOrUndefined = (pluralName: string) => KubeResourceKind | undefined;
