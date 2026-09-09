@@ -20,7 +20,8 @@ module.exports = {
   testEnvironment: "jest-fixed-jsdom",
   globalSetup: "@lensapp/jest/jest-global-setup",
   testMatch: ["**/experiments/*/src/**/*.test.{ts,tsx}"],
-  testPathIgnorePatterns: ["/node_modules/", "/dist/"],
+  // "/.claude/" keeps a git worktree checked out under it from being collected twice
+  testPathIgnorePatterns: ["/node_modules/", "/dist/", "/.claude/"],
   modulePathIgnorePatterns: ["dist"],
   passWithNoTests: true,
   clearMocks: true,
