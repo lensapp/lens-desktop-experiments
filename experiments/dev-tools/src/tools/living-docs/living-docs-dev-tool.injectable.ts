@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import { LivingDocs } from "./_private/living-docs.injectable";
 

@@ -1,9 +1,9 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
 import { computed, observable, runInAction } from "mobx";
 import { featuresInjectable, type EnableableFeature } from "./features.injectable";
 import { lensIdLicenseInjectionToken } from "@lensapp/lens-id";
 import type { License } from "@lensapp/lens-platform-extension-sdk";
-import { registerFeature } from "@lensapp/feature-core";
+import { registerFeature } from "@k8slens/feature-core";
 import type { IComputedValue } from "mobx";
 import { userInfoDevToolFeature } from "../feature";
 import { runAllTestUtilityRunnables } from "@lensapp/test-utils-for-production";

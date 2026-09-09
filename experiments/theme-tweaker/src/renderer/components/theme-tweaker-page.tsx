@@ -1,4 +1,4 @@
-import { Div, Span } from "@lensapp/element-components";
+import { Div, Span } from "@k8slens/element-components";
 import { Heading, SectionBlock, SectionBlockSeparator, SectionGroup } from "@lensapp/presentational-components";
 import { observer } from "mobx-react";
 import { useEffect, useState } from "react";

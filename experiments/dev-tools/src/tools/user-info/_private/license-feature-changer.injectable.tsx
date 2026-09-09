@@ -1,4 +1,4 @@
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { observer } from "mobx-react";
 import { LicenseFeaturesSelect } from "./license-features-select";

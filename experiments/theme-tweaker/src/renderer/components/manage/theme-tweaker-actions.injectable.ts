@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { runInAction } from "mobx";
 import { colorThemeInjectable } from "@lensapp/user-preferences";
 import { customDarkColorsInjectable, customLightColorsInjectable } from "../../state/custom-theme-colors.injectable";

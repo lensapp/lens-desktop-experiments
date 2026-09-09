@@ -1,11 +1,11 @@
-import { Div, Input } from "@lensapp/element-components";
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { Div, Input } from "@k8slens/element-components";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
-import * as allExportsFromIcon from "@lensapp/icon";
+import * as allExportsFromIcon from "@k8slens/icon";
 import { isValidElementType } from "react-is";
 import { useMemo, useState } from "react";
 import { observer } from "mobx-react";
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 
 export const AllExportsFromIconInjectable = getInjectable({
   id: "icon-components",

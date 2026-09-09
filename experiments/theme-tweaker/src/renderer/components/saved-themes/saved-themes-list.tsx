@@ -1,4 +1,4 @@
-import { Div, Span } from "@lensapp/element-components";
+import { Div, Span } from "@k8slens/element-components";
 import { observer } from "mobx-react";
 import { Button } from "@lensapp/button";
 import type { IObservableArray } from "mobx";

@@ -1,4 +1,4 @@
-import { getInjectable2, getInjectableBunch, type Injectable, instantiationDecoratorToken } from "@lensapp/injectable";
+import { getInjectable2, getInjectableBunch, type Injectable, instantiationDecoratorToken } from "@k8slens/injectable";
 
 import {
   getMessageChannel,

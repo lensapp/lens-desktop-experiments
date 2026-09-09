@@ -1,6 +1,6 @@
 import { livingDocsEntryInjectionToken } from "@lensapp/living-docs";
-import { getInjectable } from "@lensapp/injectable";
-import { computedInjectManyInjectionToken } from "@lensapp/injectable-extension-for-mobx";
+import { getInjectable } from "@k8slens/injectable";
+import { computedInjectManyInjectionToken } from "@k8slens/injectable-extension-for-mobx";
 
 export const livingDocsItemsInjectable = getInjectable({
   id: "living-docs-entries",

@@ -1,8 +1,8 @@
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { observer } from "mobx-react";
 import { livingDocsItemsInjectable } from "./living-docs-items.injectable";
-import { Div, H2, H3 } from "@lensapp/element-components";
+import { Div, H2, H3 } from "@k8slens/element-components";
 
 export const LivingDocs = getInjectableComponent({
   id: "living-docs-component",

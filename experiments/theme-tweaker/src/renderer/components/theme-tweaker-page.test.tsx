@@ -1,8 +1,8 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
-import { registerFeature } from "@lensapp/feature-core";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
+import { registerFeature } from "@k8slens/feature-core";
 import { renderFor } from "@lensapp/rendering-test-utils";
 import { runAllTestUtilityRunnables } from "@lensapp/test-utils-for-production";
-import { getStrictOverrideOf } from "@lensapp/test-utils";
+import { getStrictOverrideOf } from "@k8slens/test-utils";
 import { getPersistedInjectionToken, type Persisted } from "@lensapp/persisted-state";
 import { fireEvent, type RenderResult } from "@testing-library/react";
 import { act } from "react";

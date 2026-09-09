@@ -1,10 +1,16 @@
 import type { IObservableValue } from "mobx";
 import { autorun, computed, observable, runInAction } from "mobx";
-import { type Feature, featureFlagInjectionToken, getFeature, registerFeature } from "@lensapp/feature-core";
-import { createContainer, type DiContainer, getInjectable, getInjectionToken } from "@lensapp/injectable";
+import { type Feature, featureFlagInjectionToken, getFeature, registerFeature } from "@k8slens/feature-core";
+import {
+  createContainer,
+  type DiContainer,
+  getInjectable,
+  getInjectable2,
+  getInjectionToken,
+} from "@k8slens/injectable";
 import { featureTogglerFeature } from "./feature";
 import { act } from "react";
-import { computedInjectManyInjectionToken } from "@lensapp/injectable-extension-for-mobx";
+import { computedInjectManyInjectionToken } from "@k8slens/injectable-extension-for-mobx";
 import { commandsInjectionToken } from "@lensapp/command-palette-renderer";
 import { commandPaletteCommandsForTogglingOfFeatureFlagsInjectable } from "./command-palette-commands-for-toggling-of-feature-flags.injectable";
 import { getMessageBridgeFake } from "@lensapp/messaging-fake-bridge";
@@ -63,8 +69,6 @@ describe("command-palette-commands-for-toggling-of-feature-flags", () => {
         someFeature = getFeature({
           id: "some-feature",
 
-          tags: ["public", "renderer", "business"],
-
           register: (di) => {
             di.register(someInjectable);
           },
@@ -97,9 +101,9 @@ describe("command-palette-commands-for-toggling-of-feature-flags", () => {
         beforeEach(async () => {
           featureIsFlagged = observable.box(true);
 
-          const someFeatureFlagInjectable = getInjectable({
+          const someFeatureFlagInjectable = getInjectable2({
             id: "some-feature-flag-for-some-feature",
-            instantiate: () => computed(() => featureIsFlagged.get()),
+            instantiate: () => () => computed(() => featureIsFlagged.get()),
             injectionToken: featureFlagInjectionToken.for(someFeature.id),
           });
 

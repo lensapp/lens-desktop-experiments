@@ -1,14 +1,11 @@
-import { getFeature } from "@lensapp/feature-core";
-import { registerInjectablesFromModules } from "@lensapp/utilities";
+import { getFeature, registerInjectablesFromModules } from "@k8slens/feature-core";
 import modulesWithInjectables from "./**/*.injectable.(ts|tsx)";
 import { devToolsFeature } from "../../in-general/feature";
-import { elementComponentFeature } from "@lensapp/element-components";
+import { elementComponentFeature } from "@k8slens/element-components";
 import { messagingFeature } from "@lensapp/messaging";
 
 export const featureTogglerFeature = getFeature({
   id: "feature-toggler",
-  tags: ["public", "renderer", "business"],
-
   register: (di) => {
     registerInjectablesFromModules(di, modulesWithInjectables);
   },

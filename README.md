@@ -31,7 +31,7 @@ Each experiment has a single entry point:
 ## Development
 
 ```bash
-# Install dependencies (requires GitHub Packages auth for @lensapp scope)
+# Install dependencies (requires GitHub Packages auth for the @lensapp scope)
 npm install
 
 # Build all experiments

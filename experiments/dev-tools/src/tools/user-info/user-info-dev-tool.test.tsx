@@ -1,13 +1,13 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
 import { userInfoDevToolFeature } from "./feature";
-import { registerFeature } from "@lensapp/feature-core";
+import { registerFeature } from "@k8slens/feature-core";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import type { RenderResult } from "@testing-library/react";
 import { type Discover, discoverFor, selectFor, type Select } from "@lensapp/react-testing-library-discovery";
 import { renderFor, type DiRender } from "@lensapp/rendering-test-utils";
 import { userInfoDevToolInjectable } from "./user-info-dev-tool.injectable";
 import { runAllTestUtilityRunnables } from "@lensapp/test-utils-for-production";
-import type { InjectableComponent } from "@lensapp/injectable-react";
+import type { InjectableComponent } from "@k8slens/injectable-react";
 import {
   lensIdDecodedTokenInjectionToken,
   lensIdLicenseInjectionToken,
@@ -203,9 +203,12 @@ describe("user-info-dev-tool", () => {
         });
 
         describe("when button is clicked", () => {
+          // Opening a $popover takes ~10s while the host's prebuilt @lensapp packages are
+          // still compiled against element-components 3.3.1 — see the resolution-bridge
+          // section in .knowledge/build.md. Drop the timeout with the bridge.
           beforeEach(async () => {
             await discover.getSingleElement("user-info-button").click();
-          });
+          }, 30_000);
 
           it("renders decoded access token", async () => {
             expect(discover.getSingleElement("user-token", "testuser").discovered).toMatchInlineSnapshot(`

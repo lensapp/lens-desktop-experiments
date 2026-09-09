@@ -1,5 +1,5 @@
-import { Button, Div, type DivProps } from "@lensapp/element-components";
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { Button, Div, type DivProps } from "@k8slens/element-components";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { useSyncInject } from "@lensapp/use-sync-inject";
 import { observer } from "mobx-react";
 import { UserInfoPopover } from "./user-info-popover";

@@ -1,6 +1,6 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
 import { allIconsDevToolFeature } from "./feature";
-import { registerFeature } from "@lensapp/feature-core";
+import { registerFeature } from "@k8slens/feature-core";
 import { renderAllIconsDevToolInjectable } from "./render-all-icons-dev-tool.injectable";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import type { RenderResult } from "@testing-library/react";

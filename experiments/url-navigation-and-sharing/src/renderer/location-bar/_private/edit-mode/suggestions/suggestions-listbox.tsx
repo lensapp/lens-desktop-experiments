@@ -1,4 +1,4 @@
-import { Li, Ul } from "@lensapp/element-components";
+import { Li, Ul } from "@k8slens/element-components";
 import type React from "react";
 import { createPortal } from "react-dom";
 import type { Suggestion } from "./location-bar-suggestions";

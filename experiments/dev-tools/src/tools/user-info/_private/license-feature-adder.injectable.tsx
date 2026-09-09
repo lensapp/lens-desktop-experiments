@@ -1,8 +1,8 @@
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { observer } from "mobx-react";
 import { useCallback, useState } from "react";
 import { Button } from "@lensapp/button";
-import { Input } from "@lensapp/element-components";
+import { Input } from "@k8slens/element-components";
 import type { SetLensIdLicenseFeatures } from "./set-lens-id-license-features.injectable";
 import type { EnableableFeature } from "./features.injectable";
 

@@ -1,5 +1,5 @@
-import { Div, Form, Input, Span } from "@lensapp/element-components";
-import { SpinnerIcon } from "@lensapp/icon";
+import { Div, Form, Input, Span } from "@k8slens/element-components";
+import { SpinnerIcon } from "@k8slens/icon";
 import type { KubeResourceKind } from "@lensapp/kube-resource";
 import { observer } from "mobx-react";
 import { useId } from "react";

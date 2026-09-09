@@ -1,4 +1,4 @@
-import { Div, Span } from "@lensapp/element-components";
+import { Div, Span } from "@k8slens/element-components";
 import { Input } from "@lensapp/input";
 import { observer } from "mobx-react";
 import { runInAction } from "mobx";

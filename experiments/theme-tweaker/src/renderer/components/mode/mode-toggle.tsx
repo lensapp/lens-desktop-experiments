@@ -1,4 +1,4 @@
-import { Button, Div, Span } from "@lensapp/element-components";
+import { Button, Div, Span } from "@k8slens/element-components";
 import type { CustomThemeMode } from "../../state/custom-theme-mode.injectable";
 
 interface ModeButtonProps {

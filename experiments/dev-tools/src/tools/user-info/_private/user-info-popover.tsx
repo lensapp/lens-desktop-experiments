@@ -1,4 +1,4 @@
-import { Div } from "@lensapp/element-components";
+import { Div } from "@k8slens/element-components";
 import type { AccessToken } from "@lensapp/lens-id";
 
 export const UserInfoPopover = ({ accessToken }: { accessToken: AccessToken }) => (

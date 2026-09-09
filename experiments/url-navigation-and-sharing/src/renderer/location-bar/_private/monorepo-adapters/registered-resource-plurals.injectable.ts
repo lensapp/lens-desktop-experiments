@@ -1,4 +1,4 @@
-import { getInjectable, getInjectionToken } from "@lensapp/injectable";
+import { getInjectable, getInjectionToken } from "@k8slens/injectable";
 import { kubeResourceKindInjectionToken, resourceApiBaseForKindInjectionToken } from "@lensapp/kube-resource";
 
 // TODO(upstream): promote to `@lensapp/kube-resource` as a first-class

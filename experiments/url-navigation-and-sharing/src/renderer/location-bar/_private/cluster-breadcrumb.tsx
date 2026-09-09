@@ -1,4 +1,4 @@
-import { Div } from "@lensapp/element-components";
+import { Div } from "@k8slens/element-components";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import type { Entity } from "@lensapp/entity-aggregator";
 import { currentKubeObjectInDetailsOrUndefinedInjectionToken } from "@lensapp/kube-object-details-panel";

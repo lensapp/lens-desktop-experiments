@@ -1,10 +1,10 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { commandsInjectionToken } from "@lensapp/command-palette-renderer";
 import { computed } from "mobx";
-import { pipeline } from "@lensapp/fp";
+import { pipeline } from "@k8slens/fp";
 import { map } from "lodash/fp";
-import { computedInjectManyWithMetaInjectionToken } from "@lensapp/injectable-extension-for-mobx";
-import { featureFlagInjectionToken } from "@lensapp/feature-core";
+import { computedInjectManyWithMetaInjectionToken } from "@k8slens/injectable-extension-for-mobx";
+import { featureFlagInjectionToken } from "@k8slens/feature-core";
 import { toggleFeatureFlagInjectable } from "./_private/toggle-feature-flag/toggle-feature-flag.injectable";
 
 export const commandPaletteCommandsForTogglingOfFeatureFlagsInjectable = getInjectable({

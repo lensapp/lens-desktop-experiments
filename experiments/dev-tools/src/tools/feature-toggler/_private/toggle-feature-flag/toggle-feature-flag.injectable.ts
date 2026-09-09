@@ -1,6 +1,6 @@
 import { expectDefined } from "@lensapp/utilities";
-import { featureFlagInjectionToken } from "@lensapp/feature-core";
-import { getInjectable } from "@lensapp/injectable";
+import { featureFlagInjectionToken } from "@k8slens/feature-core";
+import { getInjectable } from "@k8slens/injectable";
 import { runInAction } from "mobx";
 import { hackComputedAsOverridable } from "../../../_shared/hack-computed-as-overridable";
 

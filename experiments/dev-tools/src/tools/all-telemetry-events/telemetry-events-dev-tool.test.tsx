@@ -1,6 +1,6 @@
-import { createContainer, type DiContainer } from "@lensapp/injectable";
+import { createContainer, type DiContainer } from "@k8slens/injectable";
 import { telemetryDevToolFeature } from "./feature";
-import { registerFeature } from "@lensapp/feature-core";
+import { registerFeature } from "@k8slens/feature-core";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import type { RenderResult } from "@testing-library/react";
 import { type Discover, discoverFor } from "@lensapp/react-testing-library-discovery";
@@ -86,17 +86,23 @@ describe("telemetry-events-dev-tool", () => {
         ]);
       });
 
+      // Opening a $popover takes ~10s while the host's prebuilt @lensapp packages are
+      // still compiled against element-components 3.3.1 — see the resolution-bridge
+      // section in .knowledge/build.md. Drop the timeout with the bridge.
       it("given telemetry event with maximal data, when event is clicked, renders", async () => {
         await discover.getSingleElement("telemetry-event", "some-name-1/some-action-1").click();
 
         expect(rendered.baseElement).toMatchSnapshot();
-      });
+      }, 30_000);
 
+      // Opening a $popover takes ~10s while the host's prebuilt @lensapp packages are
+      // still compiled against element-components 3.3.1 — see the resolution-bridge
+      // section in .knowledge/build.md. Drop the timeout with the bridge.
       it("given telemetry event with minimal data, when event is clicked, renders", async () => {
         await discover.getSingleElement("telemetry-event", "some-name-2/some-action-2").click();
 
         expect(rendered.baseElement).toMatchSnapshot();
-      });
+      }, 30_000);
 
       describe("when events are cleared", () => {
         beforeEach(async () => {

@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { clustersInjectionToken } from "@lensapp/cluster-source";
 import { clusterDisplayNameInjectionToken } from "@lensapp/cluster-common";
 import { type IComputedValue, computed } from "mobx";

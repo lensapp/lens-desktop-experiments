@@ -1,4 +1,4 @@
-import { getInjectable } from "@lensapp/injectable";
+import { getInjectable } from "@k8slens/injectable";
 import { runInAction } from "mobx";
 import { telemetryEventsInjectable } from "../_shared/telemetry-events.injectable";
 import { devToolActionInjectionToken } from "../../../in-general/dev-tool-action";

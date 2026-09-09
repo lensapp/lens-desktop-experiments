@@ -1,28 +1,28 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`living-docs-dev-tool given components catalog dev tool and some component item renders 1`] = `
 <body>
   <div>
     <div
-      class="overflow__y--scroll padding--l border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__y--scroll___ykZ21 padding-module__padding--l___RVDLk border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; top: 50%; left: 50%; width: 800px; height: 500px; transform: translate(-50%, -50%); z-index: 999;"
     >
       <h2
-        class="text-align--center margin__bottom--xl font__size--xl"
+        class="text-align-module__text-align--center___bDrR2 margin-module__margin__bottom--xl___M4AwN font-module__font__size--xl___RehoQ"
       >
         Living Docs
       </h2>
       <div
-        class="flex flex__direction--vertical flex__gap--xs padding--m margin__bottom--xl border__radius--l border__width--s border__color--grey60 border__style--solid backgroundColor--grey80Alpha85"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--vertical___0AiOf flex-module__flex__gap--xs___tt3So padding-module__padding--m___PdtZa margin-module__margin__bottom--xl___M4AwN border-module__border__radius--l___-54nx border-module__border__width--s___x9NUj border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80Alpha85___7oTX3"
       >
         <h3
-          class="margin__bottom--s font__size--l"
+          class="margin-module__margin__bottom--s___-HF6Q font-module__font__size--l___uKcuk"
           data-living-docs-item-title-test="some-living-docs-item-id"
         >
           Some Components Catalog Item
         </h3>
         <div
-          class="margin__bottom--m color--grey20"
+          class="margin-module__margin__bottom--m___JJORE color-module__color--grey20___EF2OL"
           data-living-docs-item-description-test="some-living-docs-item-id"
         >
           This is some components catalog item for testing.

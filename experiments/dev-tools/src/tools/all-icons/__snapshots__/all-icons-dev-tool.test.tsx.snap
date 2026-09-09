@@ -1,25 +1,25 @@
-// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+// Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`all-icons-dev-tool when rendered renders 1`] = `
 <body>
   <div>
     <div
-      class="overflow__y--scroll padding--l border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__y--scroll___ykZ21 padding-module__padding--l___RVDLk border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; top: 50%; left: 50%; width: 800px; height: 500px; transform: translate(-50%, -50%); z-index: 999;"
     >
       <input
-        class="width--full padding--xs border__radius--m border__width--xxs border__color--grey60 border__style--solid"
+        class="width-module__width--full___1mpiz padding-module__padding--xs___QwhaB border-module__border__radius--m___EoHvj border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J"
         data-icon-search-input-test="true"
         placeholder="Search..."
         type="text"
         value=""
       />
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__justifyContent--center flex__gap--l margin__top--l"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__justifyContent--center___urZYG flex-module__flex__gap--l___cvmjw margin-module__margin__top--l___KTWiG"
         style="flex-wrap: wrap;"
       >
         <div
-          class="border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+          class="border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
           data-icon-test="SomeIcon"
         >
           <div>
@@ -27,7 +27,7 @@ exports[`all-icons-dev-tool when rendered renders 1`] = `
           </div>
         </div>
         <div
-          class="border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+          class="border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
           data-icon-test="SomeOtherIcon"
         >
           <div>
@@ -44,22 +44,22 @@ exports[`all-icons-dev-tool when rendered when searching renders 1`] = `
 <body>
   <div>
     <div
-      class="overflow__y--scroll padding--l border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey100"
+      class="overflow-module__overflow__y--scroll___ykZ21 padding-module__padding--l___RVDLk border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey100___PRzUt"
       style="position: absolute; top: 50%; left: 50%; width: 800px; height: 500px; transform: translate(-50%, -50%); z-index: 999;"
     >
       <input
-        class="width--full padding--xs border__radius--m border__width--xxs border__color--grey60 border__style--solid"
+        class="width-module__width--full___1mpiz padding-module__padding--xs___QwhaB border-module__border__radius--m___EoHvj border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J"
         data-icon-search-input-test="true"
         placeholder="Search..."
         type="text"
         value="other"
       />
       <div
-        class="flex flex__direction--horizontal flex__alignItems--center flex__justifyContent--center flex__gap--l margin__top--l"
+        class="flex-module__flex___eFLEc flex-module__flex__direction--horizontal___a32zo flex-module__flex__alignItems--center___0Vsy9 flex-module__flex__justifyContent--center___urZYG flex-module__flex__gap--l___cvmjw margin-module__margin__top--l___KTWiG"
         style="flex-wrap: wrap;"
       >
         <div
-          class="border__radius--l border__width--xxs border__color--grey60 border__style--solid backgroundColor--grey80"
+          class="border-module__border__radius--l___-54nx border-module__border__width--xxs___J0tZ9 border-module__border__color--grey60___P9JMH border-module__border__style--solid___1Qy1J background-color-module__backgroundColor--grey80___abytu"
           data-icon-test="SomeOtherIcon"
         >
           <div>

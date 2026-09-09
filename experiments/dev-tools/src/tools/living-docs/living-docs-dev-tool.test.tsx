@@ -1,11 +1,11 @@
-import { createContainer, getInjectable, type DiContainer } from "@lensapp/injectable";
-import { registerFeature } from "@lensapp/feature-core";
+import { createContainer, getInjectable, type DiContainer } from "@k8slens/injectable";
+import { registerFeature } from "@k8slens/feature-core";
 import { devToolInjectionToken } from "../../in-general/dev-tool";
 import { act, type RenderResult } from "@testing-library/react";
 import { discoverFor, type Discover } from "@lensapp/react-testing-library-discovery";
 import { renderFor, type DiRender } from "@lensapp/rendering-test-utils";
 import { runAllTestUtilityRunnables } from "@lensapp/test-utils-for-production";
-import type { InjectableComponent } from "@lensapp/injectable-react";
+import type { InjectableComponent } from "@k8slens/injectable-react";
 import type { JSX } from "react";
 import { livingDocsDevToolInjectable } from "./living-docs-dev-tool.injectable";
 import { livingDocsDevToolFeature } from "./feature";

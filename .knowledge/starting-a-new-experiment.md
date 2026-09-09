@@ -18,7 +18,7 @@ If the experiment touches an existing Lens product area, read the relevant produ
 
 ## 2. Inspect Only Public Monorepo APIs
 
-Before writing experiment code, inspect the public APIs of the relevant `@lensapp/*` packages.
+Before writing experiment code, inspect the public APIs of the relevant host packages — and check which scope and tier each one is in ([rules.md](./rules.md#1-the-host-surface-spans-two-scopes)).
 
 - Start from each package's `index.ts`.
 - Treat the monorepo as a third-party dependency.
@@ -37,7 +37,7 @@ Ask, in order:
    a new injection token, a new `index.ts` re-export, or a new injectable implementing an existing token?
 3. If it would require changing or removing an existing contract, stop and redesign around a new extension point instead of forcing the experiment through a breaking change.
 
-If monorepo support is needed, read [rules.md](./rules.md) and [cross-repo.md](./cross-repo.md), then land one dedicated additive PR in the monorepo first. Only after the needed `@lensapp/*` package version is published should the experiment depend on it here.
+If monorepo support is needed, read [rules.md](./rules.md) and [cross-repo.md](./cross-repo.md), then land one dedicated additive PR in the monorepo first. Only after the needed host package version is published should the experiment depend on it here.
 
 ## 4. Pick The Right Reference Shape
 

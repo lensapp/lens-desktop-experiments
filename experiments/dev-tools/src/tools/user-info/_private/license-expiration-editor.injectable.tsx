@@ -1,5 +1,5 @@
-import { Label } from "@lensapp/element-components";
-import { getInjectableComponent } from "@lensapp/injectable-react";
+import { Label } from "@k8slens/element-components";
+import { getInjectableComponent } from "@k8slens/injectable-react";
 import { observer } from "mobx-react";
 import { lensIdLicenseInjectionToken } from "@lensapp/lens-id";
 import { setLensIdLicenseExpiresAtInjectable } from "./set-lens-id-license-expires-at.injectable";

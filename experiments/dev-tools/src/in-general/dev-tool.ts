@@ -1,4 +1,4 @@
-import { getInjectionToken } from "@lensapp/injectable";
+import { getInjectionToken } from "@k8slens/injectable";
 
 export type DevTool = {
   id: string;
