@@ -57,6 +57,25 @@ To try an experiment in a running Lens Desktop before publishing:
 
 This path bypasses signing / manifest / catalog — it does not validate the signed-catalog flow. Re-test through the catalog with a real release tag before shipping.
 
+### A Filesystem Install Is Not Granted The Internal Tier
+
+Every experiment here imports at least one internal-tier package (`status-bar`, `application`, `cluster-source`, `telemetry`, …). That tier is granted per install, and the host registers only two grants: the signed catalog's verified install, keyed on the exact verified `package.json` path (`lab-experiment-catalog`), and `@lensapp/dev-tools` by manifest name, which is `development-only` (`extension-development/src/development-only/dev-tools-internal-tier-grant.injectable.ts`). A filesystem install is neither, so the first internal import is refused:
+
+> Tried to import "@lensapp/status-bar", which is not available. Rebuild the extension against the extension APIs of this Lens version
+
+The refusal reads identically for an internal package and for one that does not exist — deliberately, so a refusal cannot enumerate what is inside Lens — so the message never names the tier as the cause. `dev-tools` is the exception that installs, because its manifest carries the granted name.
+
+Until the host grants the tier to a local experiment install, borrow the dev-tools grant for one experiment at a time:
+
+1. `npm run build:experiment -- <id> && npm run generate-package-json`
+2. In `experiments/<id>/dist/package.json` — generated and gitignored — set `"name": "@lensapp/dev-tools"`
+3. Launch a development build, or `DEVELOPMENT=1 /path/to/Lens` for a production binary; the grant is dropped otherwise
+4. Install that `dist/package.json`, and uninstall the real dev-tools first — the two collide by name
+
+The forged name works only because that grant is `development-only`; it buys nothing against a shipped build.
+
+The lasting fix is additive and belongs in the monorepo: an `asInternalExtensionDependencyGrantForDevelopmentOnly` beside the dev-tools grant, keyed on the `experiment` manifest block rather than one hard-coded name.
+
 ## Publishing
 
 Tag the repo `<lensVersion>.<numericSuffix>` (e.g. `2025.12.0.3`). The Lens Desktop client requires this exact shape — a `v` prefix or anything else will not be discoverable by clients.
