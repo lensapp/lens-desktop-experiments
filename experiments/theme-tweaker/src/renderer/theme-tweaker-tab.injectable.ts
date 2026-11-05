@@ -1,15 +1,15 @@
-import { getInjectable } from "@k8slens/injectable";
+import { getInjectable2 } from "@k8slens/injectable";
 import {
   preferenceNavigationGroupInjectionToken,
   preferenceNavigationItemInjectionToken,
-} from "@lensapp/preferences-contracts";
+} from "@k8slens/preferences-contracts";
 import { themeTweakerPageKind } from "./theme-tweaker-preference-block.injectable";
 
 export const labsPreferenceGroupId = "labs";
 
-export const labsPreferenceGroupInjectable = getInjectable({
+export const labsPreferenceGroupInjectable = getInjectable2({
   id: "theme-tweaker-labs-preference-group",
-  instantiate: () => ({
+  instantiate: () => () => ({
     id: labsPreferenceGroupId,
     label: "Experimental features",
     orderNumber: 500,
@@ -17,9 +17,9 @@ export const labsPreferenceGroupInjectable = getInjectable({
   injectionToken: preferenceNavigationGroupInjectionToken,
 });
 
-export const themeTweakerPreferenceTabInjectable = getInjectable({
+export const themeTweakerPreferenceTabInjectable = getInjectable2({
   id: "theme-tweaker-preference-tab",
-  instantiate: () => ({
+  instantiate: () => () => ({
     id: "theme-tweaker-tab",
     groupId: labsPreferenceGroupId,
     pathId: themeTweakerPageKind,
